@@ -1,0 +1,951 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team Planner</title>
+<style>
+:root {
+  --bg: #f4f5f8; --panel: #ffffff; --ink: #1d2330; --muted: #6b7280;
+  --line: #dfe3e9; --line2: #eceef2; --hover: #f0f3f9;
+  --over: #c62828; --overbg: #fde2e2; --out: #b26a00; --outbg: #fff0d1;
+  --spare: #1b7f45; --sparebg: #dcf3e5; --leave: #8b95a5;
+  --ms: #7048c8; --window: rgba(112, 72, 200, .07); --st: rgba(112, 72, 200, .22);
+  --today: #2f62f5; --accent: #2f62f5; --past: rgba(140, 150, 170, .16);
+  --labw: 290px; --cw: 46px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151a; --panel: #1b1f26; --ink: #e5e8ee; --muted: #98a0ad;
+    --line: #2d333d; --line2: #232830; --hover: #232a35;
+    --over: #ff6b6b; --overbg: #4b1e22; --out: #f0b040; --outbg: #3f3118;
+    --spare: #5fd394; --sparebg: #173a28; --leave: #6c7584;
+    --ms: #a98bff; --window: rgba(169, 139, 255, .07); --st: rgba(169, 139, 255, .25);
+    --today: #6d93ff; --accent: #6d93ff; --past: rgba(0, 0, 0, .28);
+  }
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; }
+body {
+  font: 13px/1.35 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg); color: var(--ink);
+  display: flex; flex-direction: column; overflow: hidden;
+}
+button, input, select { font: inherit; color: inherit; }
+button {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
+  padding: 4px 9px; cursor: pointer;
+}
+button:hover { background: var(--hover); }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+button.danger { color: var(--over); }
+input, select {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 3px 6px;
+}
+input[type=number] { width: 70px; }
+input[type=color] { padding: 0 2px; width: 42px; height: 26px; }
+
+/* Top bar */
+.top {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.top h1 { font-size: 15px; margin: 0 8px 0 0; }
+.palette { display: flex; gap: 4px; flex-wrap: wrap; align-items: center; flex: 1; }
+.palette .sep { width: 1px; height: 22px; background: var(--line); margin: 0 4px; }
+.tool { display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px; font-size: 12px; }
+.tool.on { outline: 2px solid var(--accent); outline-offset: 1px; }
+.tool .sw { width: 11px; height: 11px; border-radius: 3px; }
+.actions { display: flex; gap: 4px; flex-wrap: wrap; }
+.hint { font-size: 11px; color: var(--muted); }
+
+/* Alerts */
+#alerts {
+  background: var(--panel); border-bottom: 1px solid var(--line);
+  padding: 6px 12px; max-height: 150px; overflow: auto; font-size: 12px;
+}
+#alerts .grp { display: flex; gap: 6px; flex-wrap: wrap; align-items: baseline; margin: 2px 0; }
+#alerts .gl { font-weight: 600; width: 92px; flex: none; color: var(--muted); }
+.chip {
+  border-radius: 999px; padding: 1px 8px; border: 1px solid var(--line); cursor: pointer; white-space: nowrap;
+}
+.chip.over { background: var(--overbg); border-color: transparent; color: var(--over); }
+.chip.out { background: var(--outbg); border-color: transparent; color: var(--out); }
+.chip.info { background: var(--hover); }
+.chip:hover { filter: brightness(.96); }
+
+/* Grid */
+#wrap { flex: 1; min-height: 0; overflow: auto; position: relative; }
+#grid { position: relative; }
+.row { display: flex; }
+.lab {
+  position: sticky; left: 0; z-index: 3; width: var(--labw); flex: none;
+  background: var(--panel); border-right: 1px solid var(--line); border-bottom: 1px solid var(--line2);
+  padding: 3px 8px; display: flex; align-items: center; gap: 7px; overflow: hidden;
+}
+.lab.click { cursor: pointer; }
+.lab.click:hover { background: var(--hover); }
+.c {
+  width: var(--cw); flex: none; position: relative;
+  border-right: 1px solid var(--line2); border-bottom: 1px solid var(--line2);
+}
+.c.past::after { content: ""; position: absolute; inset: 0; background: var(--past); pointer-events: none; }
+.c.now { box-shadow: inset 0 0 0 1px var(--today); }
+
+.head { position: sticky; top: 0; z-index: 6; background: var(--panel); }
+.head .lab { z-index: 7; font-weight: 600; }
+.band { height: 56px; }
+.band .area { position: relative; flex: none; border-bottom: 1px solid var(--line2); }
+.mk {
+  position: absolute; font-size: 10.5px; white-space: nowrap; padding: 1px 4px 1px 5px;
+  border-left: 2px solid var(--ms); color: var(--ms); background: var(--panel); line-height: 15px;
+}
+.mk.st { border-left: 0; background: var(--st); color: var(--ink); border-radius: 3px; overflow: hidden; }
+.mk.rel { border-left-color: var(--ink); color: var(--ink); font-weight: 700; }
+.wk .c { height: 34px; text-align: center; font-size: 10.5px; padding-top: 3px; border-bottom: 1px solid var(--line); }
+.wk .c b { display: block; font-size: 11px; }
+.wk .c.now { background: var(--today); color: #fff; box-shadow: none; }
+.wk .lab { border-bottom: 1px solid var(--line); }
+
+.sec .lab {
+  font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted);
+  background: var(--bg); justify-content: space-between;
+}
+.sec .lab button { text-transform: none; letter-spacing: 0; font-weight: 500; font-size: 11px; padding: 1px 7px; }
+.sec .fill { flex: none; background: var(--bg); border-bottom: 1px solid var(--line2); }
+
+/* Load strips */
+.strip .c { height: 26px; font-size: 10.5px; text-align: center; padding-top: 6px; font-variant-numeric: tabular-nums; }
+.strip.test .c { height: 34px; padding-top: 9px; font-size: 11.5px; font-weight: 600; }
+.strip.test .lab { font-weight: 700; }
+.strip .c.over { background: var(--overbg); color: var(--over); font-weight: 700; }
+.strip .c.out { background: var(--outbg); color: var(--out); }
+
+/* MVP rows */
+.mrow .lab { height: 52px; align-items: flex-start; padding-top: 5px; }
+.mrow .c { height: 52px; }
+.sw { width: 12px; height: 12px; border-radius: 3px; flex: none; margin-top: 2px; }
+.lt { min-width: 0; flex: 1; }
+.lt > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.l2, .l3 { font-size: 11px; color: var(--muted); }
+.tag { font-size: 10px; border: 1px solid var(--line); border-radius: 4px; padding: 0 4px; color: var(--muted); }
+.bad { font-size: 10px; border-radius: 4px; padding: 0 4px; background: var(--overbg); color: var(--over); font-weight: 600; }
+.warnb { font-size: 10px; border-radius: 4px; padding: 0 4px; background: var(--outbg); color: var(--out); font-weight: 600; }
+.bac.under { color: var(--out); font-weight: 600; }
+.bac.over { color: var(--over); font-weight: 600; }
+.bac.ok { color: var(--spare); }
+.dv, .ts { position: absolute; left: 0; right: -1px; height: 15px; }
+.dv { top: 7px; }
+.ts { top: 29px; }
+.mrow .c.late { background: repeating-linear-gradient(135deg, var(--overbg) 0 4px, transparent 4px 8px); }
+.due { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed var(--over); z-index: 1; }
+.due::before {
+  content: "due"; position: absolute; top: -1px; left: 2px; font-size: 9px; color: var(--over); font-weight: 700;
+}
+
+/* People rows */
+.prow .lab, .prow .c { height: 32px; }
+.prow .lab .nm { font-weight: 600; }
+.role { font-size: 10px; border-radius: 4px; padding: 0 5px; background: var(--hover); color: var(--muted); }
+.pc { cursor: pointer; overflow: hidden; }
+.segs { position: absolute; inset: 2px 0 2px 0; display: flex; flex-direction: column; gap: 1px; }
+.seg {
+  flex: 1; color: #fff; font-size: 9.5px; font-weight: 600; text-align: center; overflow: hidden;
+  white-space: nowrap; text-shadow: 0 0 2px rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center;
+}
+.seg.def { background: repeating-linear-gradient(135deg, #6f7a8c 0 5px, #5d6778 5px 10px); }
+.lv {
+  position: absolute; right: 0; top: 0; bottom: 0; z-index: 1;
+  background: repeating-linear-gradient(45deg, var(--leave) 0 3px, transparent 3px 6px);
+  border-left: 1px solid var(--leave); font-size: 9.5px; font-weight: 700; color: var(--ink);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.lv span { background: var(--panel); border-radius: 3px; padding: 0 2px; margin-bottom: 1px; }
+.lv.long { outline: 2px solid var(--leave); outline-offset: -2px; }
+.pc.over { box-shadow: inset 0 0 0 2px var(--over); }
+.pc.over .segs { inset: 3px 2px; }
+.pc.out { background: var(--outbg); }
+.pc.spare { background: var(--sparebg); }
+.pc .spt {
+  position: absolute; left: 0; right: 0; bottom: 1px; text-align: center;
+  font-size: 9.5px; font-weight: 700; color: var(--spare); z-index: 1;
+}
+.pc.out .spt { color: var(--out); }
+.flag {
+  position: absolute; top: 0; right: 1px; z-index: 2; font-size: 10px; color: var(--out); font-weight: 700;
+  background: var(--panel); border-radius: 0 0 0 4px; padding: 0 2px; line-height: 12px;
+}
+.pc.pv { box-shadow: inset 0 0 0 2px var(--accent); background: var(--hover); }
+body.painting .pc { cursor: crosshair; touch-action: none; }
+body.painting { user-select: none; }
+
+/* Overlay */
+#ov { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
+.ml { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--ms); opacity: .7; }
+.ml.dash { border-left-style: dashed; opacity: .5; }
+.win { position: absolute; top: 0; bottom: 0; background: var(--window); }
+.tl { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px solid var(--today); opacity: .8; }
+
+/* Side panel */
+#panel {
+  position: fixed; top: 0; right: 0; bottom: 0; width: 420px; max-width: 100vw; z-index: 20;
+  background: var(--panel); border-left: 1px solid var(--line); box-shadow: -8px 0 24px rgba(0, 0, 0, .12);
+  overflow: auto; padding: 14px 16px 40px;
+}
+#panel[hidden] { display: none; }
+#panel h2 { font-size: 15px; margin: 0 0 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+#panel h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 6px; }
+#panel .f { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; align-items: center; }
+#panel .f label { color: var(--muted); font-size: 12px; }
+#panel .list { display: flex; flex-direction: column; gap: 5px; }
+#panel .it { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; padding: 5px; border: 1px solid var(--line2); border-radius: 6px; }
+#panel .it select { max-width: 150px; }
+#panel .it input[type=number] { width: 58px; }
+#panel .note { font-size: 11.5px; color: var(--muted); margin: 4px 0; }
+#panel .stats { display: grid; grid-template-columns: auto auto; gap: 2px 14px; font-size: 12px; justify-content: start; }
+#panel .rel { border: 1px solid var(--line); border-radius: 8px; padding: 8px; margin-bottom: 10px; }
+.x { border: 0; background: none; color: var(--muted); padding: 2px 6px; }
+.x:hover { color: var(--over); background: none; }
+.legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--muted); align-items: center; }
+.legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 3px; }
+
+@media (max-width: 700px) {
+  :root { --labw: 170px; --cw: 40px; }
+  .mrow .l2 { display: none; }
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Team Planner</h1>
+  <div class="palette" id="palette"></div>
+  <div class="actions">
+    <label class="hint"><input type="checkbox" id="spareToggle"> Show spare capacity</label>
+    <button id="todayBtn">Today</button>
+    <button id="relBtn">Releases</button>
+    <button id="setBtn">Settings</button>
+  </div>
+</header>
+<section id="alerts"></section>
+<main id="wrap"><div id="grid"></div></main>
+<aside id="panel" hidden></aside>
+<input type="file" id="importFile" accept="application/json,.json" hidden>
+
+<script>
+'use strict';
+
+/* ---------- Dates & weeks ---------- */
+const DAY = 864e5, WEEK = 7 * DAY;
+const EPOCH = Date.UTC(2000, 0, 3); // a Monday; weeks are counted from here
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const parse = s => { const [y, m, d] = s.split('-').map(Number); return Date.UTC(y, m - 1, d); };
+const fmt = ms => new Date(ms).toISOString().slice(0, 10);
+const wOf = ms => Math.floor((ms - EPOCH) / WEEK);
+const W = s => wOf(parse(s));
+const mon = w => EPOCH + w * WEEK;
+const ws = w => fmt(mon(w));
+const dshort = ms => { const d = new Date(ms); return d.getUTCDate() + ' ' + MONTHS[d.getUTCMonth()]; };
+const dlong = ms => dshort(ms) + ' ' + new Date(ms).getUTCFullYear();
+function isoWeek(ms) {
+  const d = new Date(ms);
+  d.setUTCDate(d.getUTCDate() + 3 - ((d.getUTCDay() + 6) % 7));
+  const jan4 = Date.UTC(d.getUTCFullYear(), 0, 4);
+  return 1 + Math.round(((d - jan4) / DAY - 3 + ((new Date(jan4).getUTCDay() + 6) % 7)) / 7);
+}
+const wname = w => 'W' + isoWeek(mon(w));
+const wlabel = w => `${wname(w)} · ${dshort(mon(w))} ${String(new Date(mon(w)).getUTCFullYear()).slice(2)}`;
+function todayMs() { const t = new Date(); return Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()); }
+
+/* ---------- Utilities ---------- */
+const uid = () => Math.random().toString(36).slice(2, 9);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const $ = s => document.querySelector(s);
+const DEF = 'DEF'; // mvpId used for defect duty
+
+/* ---------- Plan data ---------- */
+const STORE = 'team-planner.v1';
+const DEFAULT_SETTINGS = { hoursPerDay: 8, outThreshold: 50, bacTolerance: 20 };
+
+function defaultReleases() {
+  const ms = (name, kind, date, end) => ({ id: uid(), name, kind, date, ...(end ? { end } : {}) });
+  return [
+    { id: 'r274', name: '27.4', start: '2026-09-28', milestones: [
+      ms('Beta code stop', 'bcs', '2027-02-12'),
+      ms('System test 1', 'st', '2027-02-15', '2027-03-12'),
+      ms('Final code stop', 'fcs', '2027-05-21'),
+      ms('System test 2', 'st', '2027-05-24', '2027-06-18'),
+    ] },
+    { id: 'r2710', name: '27.10', start: '2027-02-12', milestones: [
+      ms('Beta code stop', 'bcs', '2027-08-13'),
+      ms('System test 1', 'st', '2027-08-16', '2027-09-10'),
+      ms('Final code stop', 'fcs', '2027-11-19'),
+      ms('System test 2', 'st', '2027-11-22', '2027-12-17'),
+    ] },
+  ];
+}
+
+function emptyPlan() {
+  return { settings: { ...DEFAULT_SETTINGS }, people: [], releases: defaultReleases(), mvps: [], assignments: [], leave: {} };
+}
+
+function samplePlan() {
+  const base = W('2026-09-28');
+  const w = n => ws(base + n);
+  const people = [
+    ['ana', 'Ana', 'dev'], ['ben', 'Ben', 'dev'], ['chen', 'Chen', 'dev'], ['dara', 'Dara', 'dev'],
+    ['eli', 'Eli', 'dev'], ['femi', 'Femi', 'dev'], ['gus', 'Gus', 'dev'], ['hana', 'Hana', 'dev'],
+    ['ivo', 'Ivo', 'dev'], ['jo', 'Jo', 'test'], ['kai', 'Kai', 'test'], ['lena', 'Lena', 'test'],
+  ].map(([id, name, role]) => ({ id, name, role }));
+  const mvps = [
+    ['sync', 'SYNC', 'Offline sync', '#3d6be0', 'r274', 1400],
+    ['sso', 'SSO', 'SSO login', '#1f9461', 'r274', 700],
+    ['rpt', 'RPT', 'Reporting v2', '#c98a00', 'r274', 1100],
+    ['push', 'PUSH', 'Push notifications', '#c4466f', 'r274', 500],
+    ['aud', 'AUD', 'Audit log', '#7d5bc9', 'r274', 600],
+    ['srch', 'SRCH', 'Search revamp', '#0a8fa0', 'r274', 1300],
+    ['dark', 'DARK', 'Dark mode', '#56636f', 'r2710', 400],
+    ['pay', 'PAY', 'Payments v3', '#b4521c', 'r2710', 1600],
+  ].map(([id, key, name, color, releaseId, bac]) => ({ id, key, name, color, releaseId, bac, due: '' }));
+  const A = (p, m, s, e, pct = 100) => ({ id: uid(), personId: p, mvpId: m, start: w(s), end: w(e), pct });
+  const assignments = [
+    A('ana', 'sync', 0, 12), A('ana', DEF, 13, 19), A('ana', 'pay', 20, 35),
+    A('ben', 'sync', 0, 12), A('ben', DEF, 13, 19, 50), A('ben', 'pay', 20, 35),
+    A('chen', 'sso', 0, 8), A('chen', 'dark', 19, 24),
+    A('dara', 'sso', 2, 8), A('dara', DEF, 9, 18), A('dara', 'dark', 19, 24),
+    A('eli', 'rpt', 3, 18),
+    A('femi', 'rpt', 6, 18),
+    A('gus', 'push', 2, 5), A('gus', 'aud', 9, 17),
+    A('hana', 'srch', 0, 7), A('hana', 'aud', 8, 17),
+    A('ivo', 'srch', 0, 14), A('ivo', DEF, 15, 22, 50),
+    A('jo', 'sync', 6, 15), A('jo', 'aud', 14, 21),
+    A('kai', 'push', 4, 7), A('kai', 'sso', 5, 10), A('kai', 'srch', 11, 16),
+    A('lena', 'srch', 6, 9), A('lena', 'rpt', 10, 19),
+  ];
+  const leave = {
+    ana: { [w(12)]: 5 }, chen: { [w(12)]: 5 }, jo: { [w(12)]: 3 }, kai: { [w(13)]: 2 },
+    eli: { [w(7)]: 4 }, lena: { [w(12)]: 5, [w(13)]: 5 }, femi: { [w(16)]: 2 },
+  };
+  return { settings: { ...DEFAULT_SETTINGS }, people, releases: defaultReleases(), mvps, assignments, leave };
+}
+
+let plan;
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE);
+    if (raw) { plan = JSON.parse(raw); plan.settings = { ...DEFAULT_SETTINGS, ...plan.settings }; return; }
+  } catch (e) { console.warn('Could not read saved plan', e); }
+  plan = samplePlan();
+}
+function save() {
+  try { localStorage.setItem(STORE, JSON.stringify(plan)); } catch (e) { console.warn('Could not save plan', e); }
+}
+function commit() { save(); render(); }
+
+/* ---------- Lookups ---------- */
+const person = id => plan.people.find(p => p.id === id);
+const mvp = id => plan.mvps.find(m => m.id === id);
+const release = id => plan.releases.find(r => r.id === id);
+const leaveDays = (pid, w) => (plan.leave[pid] || {})[ws(w)] || 0;
+const capacity = (pid, w) => Math.max(0, 5 - leaveDays(pid, w));
+function bcsOf(rel) { const m = rel && rel.milestones.find(x => x.kind === 'bcs'); return m ? m.date : ''; }
+function dueOf(m) { return m.due || bcsOf(release(m.releaseId)); }
+const mvpLabel = id => id === DEF ? 'Defects' : (mvp(id) ? (mvp(id).key || mvp(id).name) : '?');
+const mvpColor = id => id === DEF ? '#6f7a8c' : (mvp(id) ? mvp(id).color : '#999');
+
+/* ---------- Model: everything the views need, computed per render ---------- */
+let M;
+function compute() {
+  const s = plan.settings;
+  const cw = wOf(todayMs());
+  let lo = Infinity, hi = -Infinity;
+  for (const r of plan.releases) {
+    lo = Math.min(lo, W(r.start));
+    for (const m of r.milestones) hi = Math.max(hi, W(m.end || m.date));
+  }
+  for (const a of plan.assignments) { lo = Math.min(lo, W(a.start)); hi = Math.max(hi, W(a.end)); }
+  if (!isFinite(lo)) { lo = cw - 4; hi = cw + 52; }
+  lo = Math.min(lo, cw - 1); hi = Math.max(hi, cw + 12);
+  const weeks = [];
+  for (let w = lo; w <= hi; w++) weeks.push(w);
+
+  // Per person, per week
+  const cells = {};
+  for (const p of plan.people) {
+    cells[p.id] = {};
+    for (const w of weeks) { const cap = capacity(p.id, w); cells[p.id][w] = { items: [], leave: 5 - cap, cap, load: 0 }; }
+  }
+  for (const a of plan.assignments) {
+    const row = cells[a.personId]; if (!row) continue;
+    for (let w = Math.max(W(a.start), lo); w <= Math.min(W(a.end), hi); w++) { row[w].items.push(a); row[w].load += +a.pct; }
+  }
+  const status = c => c.cap <= 0 ? 'leave' : c.load > 100 ? 'over' : c.load < s.outThreshold ? 'out' : 'ok';
+  for (const pid in cells) for (const w of weeks) cells[pid][w].status = status(cells[pid][w]);
+
+  // Per MVP
+  const mv = {};
+  for (const m of plan.mvps) {
+    const due = dueOf(m);
+    mv[m.id] = { devH: 0, testH: 0, devW: new Set(), testW: new Set(), devP: new Set(), testP: new Set(),
+                 week: {}, dueMs: due ? parse(due) : null, late: false, lateW: new Set() };
+  }
+  for (const a of plan.assignments) {
+    const x = mv[a.mvpId], p = person(a.personId); if (!x || !p) continue;
+    const isDev = p.role === 'dev';
+    (isDev ? x.devP : x.testP).add(p.name);
+    for (let w = W(a.start); w <= W(a.end); w++) {
+      const h = a.pct / 100 * capacity(p.id, w) * s.hoursPerDay;
+      if (isDev) { x.devH += h; x.devW.add(w); } else { x.testH += h; x.testW.add(w); }
+      (x.week[w] ||= { dev: [], test: [] })[isDev ? 'dev' : 'test'].push(`${p.name} ${a.pct}%`);
+      if (x.dueMs != null && mon(w) > x.dueMs) { x.late = true; x.lateW.add(w); }
+    }
+  }
+  for (const m of plan.mvps) {
+    const x = mv[m.id], total = x.devH + x.testH, bac = +m.bac || 0;
+    x.total = total;
+    x.bacState = !bac ? 'none' : total < bac ? 'under' : total > bac * (1 + s.bacTolerance / 100) ? 'over' : 'ok';
+  }
+
+  // Role load strips
+  const strip = { dev: {}, test: {} };
+  for (const w of weeks) {
+    for (const role of ['dev', 'test']) {
+      let used = 0, cap = 0;
+      for (const p of plan.people) if (p.role === role) { const c = cells[p.id][w]; cap += c.cap; used += c.load / 100 * c.cap; }
+      strip[role][w] = { used, cap, pct: cap ? used / cap * 100 : 0 };
+    }
+  }
+
+  // Running-out-of-work runs and their one-week-ahead flags
+  const flags = {}; // pid -> Set of weeks carrying the "runs out next week" flag
+  const runs = [];  // {pid, start, len, kind}
+  for (const p of plan.people) {
+    flags[p.id] = new Set();
+    // Weeks fully on leave neither start nor break a run
+    const sts = weeks.map(w => cells[p.id][w].status);
+    for (const kind of ['out', 'over']) {
+      for (let i = 0; i < weeks.length; i++) {
+        const w = weeks[i], st = sts[i];
+        let k = i - 1; while (k >= 0 && sts[k] === 'leave') k--;
+        if (st !== kind || (k >= 0 && sts[k] === kind)) continue;
+        let len = 0;
+        for (let j = i; j < weeks.length && (sts[j] === kind || sts[j] === 'leave'); j++) len = j - i + 1;
+        while (sts[i + len - 1] === 'leave') len--;
+        runs.push({ pid: p.id, start: w, len, kind });
+        if (kind === 'out' && w - 1 >= cw) flags[p.id].add(w - 1);
+      }
+    }
+  }
+  return { cw, lo, hi, weeks, cells, mv, strip, flags, runs };
+}
+
+/* ---------- Geometry ---------- */
+const cssNum = v => parseFloat(getComputedStyle(document.documentElement).getPropertyValue(v));
+let LABW = 290, CW = 46;
+const xOf = ms => LABW + (ms - mon(M.lo)) / WEEK * CW;
+
+/* ---------- UI state ---------- */
+let tool = 'select';
+let panelState = null;
+let showSpare = false;
+let drag = null;
+let firstRender = true;
+
+/* ---------- Rendering ---------- */
+function render() {
+  LABW = cssNum('--labw'); CW = cssNum('--cw');
+  M = compute();
+  renderPalette();
+  renderAlerts();
+  renderGrid();
+  renderPanel();
+  if (firstRender) { firstRender = false; scrollToToday(); }
+}
+
+function renderPalette() {
+  const t = (id, label, color) =>
+    `<button class="tool${tool === id ? ' on' : ''}" data-tool="${esc(id)}">${color ? `<span class="sw" style="background:${color}"></span>` : ''}${esc(label)}</button>`;
+  $('#palette').innerHTML =
+    t('select', '↖ Select') + t('erase', '⌫ Erase') + '<span class="sep"></span>' +
+    t('leave', 'Leave', 'repeating-linear-gradient(45deg,var(--leave) 0 2px,transparent 2px 4px)') +
+    t(DEF, 'Defects', '#6f7a8c') + '<span class="sep"></span>' +
+    plan.mvps.map(m => t(m.id, m.key || m.name, m.color)).join('') +
+    `<span class="hint">${tool === 'select' ? 'Pick a brush, then drag across a person’s weeks.'
+      : 'Drag across weeks to paint · Shift adds alongside existing work · Esc to stop'}</span>`;
+  document.body.classList.toggle('painting', tool !== 'select');
+}
+
+function renderAlerts() {
+  const { cw, runs, mv } = M;
+  const name = pid => person(pid).name;
+  const chip = (cls, text, open) => `<span class="chip ${cls}" data-open="${esc(open)}">${esc(text)}</span>`;
+  const now = [], soon = [], mvpA = [];
+  for (const r of runs) {
+    const end = r.start + r.len - 1;
+    const wl = r.len > 1 ? ` (${r.len} wks)` : '';
+    if (r.kind === 'out') {
+      if (r.start === cw + 1) now.push(chip('out', `${name(r.pid)} runs out of work next week, ${wlabel(r.start)}${wl}`, 'person:' + r.pid));
+      else if (r.start <= cw && end >= cw) now.push(chip('out', `${name(r.pid)} is short of work this week`, 'person:' + r.pid));
+      else if (r.start > cw + 1 && r.start <= cw + 12) soon.push(chip('out', `${name(r.pid)} out of work from ${wlabel(r.start)}${wl}`, 'person:' + r.pid));
+    } else {
+      if (r.start <= cw + 1 && end >= cw) now.push(chip('over', `${name(r.pid)} overbooked${r.start > cw ? ' next week' : ''} until ${wlabel(end)}`, 'person:' + r.pid));
+      else if (r.start > cw + 1 && r.start <= cw + 12) soon.push(chip('over', `${name(r.pid)} overbooked from ${wlabel(r.start)}${wl}`, 'person:' + r.pid));
+    }
+  }
+  for (const m of plan.mvps) {
+    const x = mv[m.id];
+    if (x.late) mvpA.push(chip('over', `${m.key || m.name} runs past its due date (${dlong(x.dueMs)})`, 'mvp:' + m.id));
+    if (x.bacState === 'under') mvpA.push(chip('out', `${m.key || m.name} planned ${Math.round(x.total)} h < BAC ${m.bac} h`, 'mvp:' + m.id));
+    if (x.bacState === 'over') mvpA.push(chip('over', `${m.key || m.name} planned ${Math.round(x.total)} h > BAC ${m.bac} h`, 'mvp:' + m.id));
+  }
+  const grp = (label, items) => items.length ? `<div class="grp"><span class="gl">${label}</span>${items.join('')}</div>` : '';
+  $('#alerts').innerHTML = (grp('Act now', now) + grp('Next 12 weeks', soon) + grp('MVPs', mvpA)) ||
+    '<div class="grp"><span class="gl">Alerts</span><span class="hint">Nothing needs attention.</span></div>';
+}
+
+function renderGrid() {
+  const { weeks, cw, cells, mv, strip, flags } = M;
+  const s = plan.settings;
+  const width = LABW + weeks.length * CW;
+  const cls = w => (w < cw ? ' past' : '') + (w === cw ? ' now' : '');
+  const out = [];
+
+  // Header: release/milestone band + week row
+  const band = [];
+  // Lanes: release starts, single-date milestones, system-test periods
+  const lane = i => 3 + i * 17;
+  plan.releases.forEach(r => {
+    band.push(`<span class="mk rel" style="left:${xOf(parse(r.start)) - LABW}px;top:${lane(0)}px">${esc(r.name)} starts ▸</span>`);
+    for (const m of r.milestones) {
+      if (m.end) {
+        const l = xOf(parse(m.date)) - LABW, rgt = xOf(parse(m.end) + DAY) - LABW;
+        band.push(`<span class="mk st" style="left:${l}px;width:${rgt - l}px;top:${lane(2)}px" title="${esc(r.name + ' ' + m.name)}: ${dlong(parse(m.date))} – ${dlong(parse(m.end))}">${esc(r.name)} ${esc(m.name)}</span>`);
+      } else {
+        band.push(`<span class="mk" style="left:${xOf(parse(m.date) + DAY) - LABW}px;top:${lane(1)}px" title="${esc(r.name + ' ' + m.name)}: ${dlong(parse(m.date))}">${esc(r.name)} ${esc(m.name)}</span>`);
+      }
+    }
+  });
+  out.push(`<div class="head"><div class="row band"><div class="lab">Releases &amp; milestones</div>
+    <div class="area" style="width:${weeks.length * CW}px">${band.join('')}</div></div>
+    <div class="row wk"><div class="lab"><div class="legend">
+      <span><i style="background:var(--overbg);box-shadow:inset 0 0 0 2px var(--over)"></i>overbooked</span>
+      <span><i style="background:var(--outbg)"></i>short of work</span>
+      <span><i style="background:repeating-linear-gradient(45deg,var(--leave) 0 2px,transparent 2px 4px)"></i>leave</span>
+    </div></div>
+    ${weeks.map(w => `<div class="c${cls(w)}"><b>${wname(w)}</b>${dshort(mon(w))}</div>`).join('')}</div></div>`);
+
+  // Load strips, testers first
+  const stripRow = (role, label) => `<div class="row strip ${role}"><div class="lab">${label}</div>${weeks.map(w => {
+    const x = strip[role][w], c = x.pct > 100 ? 'over' : x.cap && x.pct < s.outThreshold ? 'out' : '';
+    return `<div class="c ${c}${cls(w)}" title="${wlabel(w)}: ${+x.used.toFixed(1)} of ${x.cap} days booked">${x.cap ? Math.round(x.pct) + '%' : '–'}</div>`;
+  }).join('')}</div>`;
+  out.push(stripRow('test', 'Testers load'));
+  out.push(stripRow('dev', 'Developers load'));
+
+  const section = (label, btn) => `<div class="row sec"><div class="lab"><span>${label}</span>${btn}</div><div class="fill" style="width:${weeks.length * CW}px"></div></div>`;
+
+  // MVP rows, grouped by target release
+  out.push(section('MVPs', '<button data-act="addMvp">+ Add MVP</button>'));
+  const relOrder = id => plan.releases.findIndex(r => r.id === id);
+  const mvps = [...plan.mvps].sort((a, b) => relOrder(a.releaseId) - relOrder(b.releaseId));
+  for (const m of mvps) {
+    const x = mv[m.id], rel = release(m.releaseId);
+    const names = `Dev: ${[...x.devP].join(', ') || '—'} · Test: ${[...x.testP].join(', ') || '—'}`;
+    const bac = m.bac ? `<span class="bac ${x.bacState}">${Math.round(x.total)} / ${m.bac} h</span>` : '<span>no BAC</span>';
+    const dueW = x.dueMs != null ? wOf(x.dueMs) : null;
+    out.push(`<div class="row mrow"><div class="lab click" data-open="mvp:${m.id}" title="${esc(names)}">
+      <span class="sw" style="background:${esc(m.color)}"></span>
+      <div class="lt"><div class="l1"><b>${esc(m.key)}</b> ${esc(m.name)} <span class="tag">${esc(rel ? rel.name : '?')}</span>
+        ${x.late ? '<span class="bad">late</span>' : ''}</div>
+        <div class="l2">${esc(names)}</div>
+        <div class="l3">Dev ${x.devW.size} wks · Test ${x.testW.size} wks · ${bac}</div></div></div>
+      ${weeks.map(w => {
+        const wk = x.week[w], late = x.lateW.has(w);
+        const tip = wk ? `${wlabel(w)}\nDev: ${wk.dev.join(', ') || '—'}\nTest: ${wk.test.join(', ') || '—'}` : wlabel(w);
+        const dv = wk && wk.dev.length ? `<div class="dv" style="background:${esc(m.color)}"></div>` : '';
+        const ts = wk && wk.test.length ? `<div class="ts" style="background:repeating-linear-gradient(135deg,${esc(m.color)} 0 5px,transparent 5px 8px);box-shadow:inset 0 0 0 1px ${esc(m.color)}"></div>` : '';
+        const due = w === dueW ? `<div class="due" style="left:${((x.dueMs - mon(w)) / DAY + 1) / 7 * 100}%" title="Due ${dlong(x.dueMs)}"></div>` : '';
+        return `<div class="c${late ? ' late' : ''}${cls(w)}" title="${esc(tip)}">${dv}${ts}${due}</div>`;
+      }).join('')}</div>`);
+  }
+
+  // People rows
+  const personRows = role => plan.people.filter(p => p.role === role).map(p => {
+    const now = cells[p.id][cw];
+    return `<div class="row prow"><div class="lab click" data-open="person:${p.id}">
+      <span class="nm">${esc(p.name)}</span><span class="role">${role === 'dev' ? 'Dev' : 'Test'}</span>
+      <span class="hint">${now ? (now.cap ? `${now.load}% this week` : 'on leave') : ''}</span></div>
+      ${weeks.map(w => personCell(p, w, cells[p.id][w], flags[p.id].has(w), cls(w))).join('')}</div>`;
+  }).join('');
+  out.push(section('Developers', '<button data-act="addPerson" data-role="dev">+ Add developer</button>'));
+  out.push(personRows('dev'));
+  out.push(section('Testers', '<button data-act="addPerson" data-role="test">+ Add tester</button>'));
+  out.push(personRows('test'));
+
+  // Overlay: bug-fix windows, milestone lines, today
+  const ov = [];
+  for (const r of plan.releases) {
+    const b = r.milestones.find(m => m.kind === 'bcs'), f = r.milestones.find(m => m.kind === 'fcs');
+    if (b && f) {
+      const l = xOf(parse(b.date) + DAY), rr = xOf(parse(f.date) + DAY);
+      ov.push(`<div class="win" style="left:${l}px;width:${rr - l}px"></div>`);
+    }
+    for (const m of r.milestones) {
+      if (m.end) continue;
+      ov.push(`<div class="ml${m.kind === 'bcs' || m.kind === 'fcs' ? '' : ' dash'}" style="left:${xOf(parse(m.date) + DAY)}px"></div>`);
+    }
+  }
+  ov.push(`<div class="tl" style="left:${xOf(todayMs())}px"></div>`);
+
+  const grid = $('#grid');
+  grid.style.width = width + 'px';
+  grid.innerHTML = out.join('') + `<div id="ov">${ov.join('')}</div>`;
+}
+
+function personCell(p, w, c, flag, extra) {
+  const st = c.status;
+  let k = 'c pc' + extra;
+  if (st === 'over') k += ' over';
+  else if (st === 'out') k += ' out';
+  else if (showSpare && c.cap > 0 && c.load < 100) k += ' spare';
+  const segs = c.items.map(a => {
+    const lbl = c.items.length === 1 ? (a.mvpId === DEF ? 'DEF' : mvpLabel(a.mvpId)) + (a.pct !== 100 ? ' ' + a.pct : '') : '';
+    return a.mvpId === DEF ? `<div class="seg def" style="flex:${a.pct}">${esc(lbl)}</div>`
+      : `<div class="seg" style="flex:${a.pct};background:${esc(mvpColor(a.mvpId))}">${esc(lbl)}</div>`;
+  }).join('');
+  const lv = c.leave ? `<div class="lv${c.leave >= 3 ? ' long' : ''}" style="width:${c.leave / 5 * 100}%"><span>${c.leave}d</span></div>` : '';
+  const spareDays = c.cap * (100 - c.load) / 100;
+  const spt = showSpare && c.cap > 0 && spareDays >= 0.5 && st !== 'over' ? `<div class="spt">+${+spareDays.toFixed(1)}d</div>` : '';
+  const fl = flag ? '<span class="flag" title="Runs out of work next week">⚑</span>' : '';
+  const tip = `${p.name} · ${wlabel(w)}\nLoad ${c.load}% of ${c.cap} days${c.leave ? `\nLeave: ${c.leave} days` : ''}` +
+    c.items.map(a => `\n${mvpLabel(a.mvpId)} ${a.pct}%`).join('') + (flag ? '\n⚑ Runs out of work next week' : '');
+  return `<div class="${k}" data-p="${p.id}" data-w="${w}" title="${esc(tip)}"><div class="segs">${segs}</div>${lv}${spt}${fl}</div>`;
+}
+
+function scrollToToday() {
+  const wrap = $('#wrap');
+  wrap.scrollLeft = Math.max(0, xOf(mon(M.cw)) - LABW - 2 * CW);
+}
+
+/* ---------- Painting ---------- */
+function eraseRange(pid, a, b, keep = () => false) {
+  const out = [];
+  for (const x of plan.assignments) {
+    const s = W(x.start), e = W(x.end);
+    if (x.personId !== pid || keep(x) || e < a || s > b) { out.push(x); continue; }
+    if (s < a) out.push({ ...x, id: uid(), end: ws(a - 1) });
+    if (e > b) out.push({ ...x, id: uid(), start: ws(b + 1) });
+  }
+  plan.assignments = out;
+}
+
+function mergeAssignments() {
+  const groups = {};
+  for (const a of plan.assignments) (groups[`${a.personId}|${a.mvpId}|${a.pct}`] ||= []).push(a);
+  const out = [];
+  for (const g of Object.values(groups)) {
+    g.sort((x, y) => W(x.start) - W(y.start));
+    let cur = null;
+    for (const a of g) {
+      if (cur && W(a.start) <= W(cur.end) + 1) { if (W(a.end) > W(cur.end)) cur.end = a.end; }
+      else { cur = { ...a }; out.push(cur); }
+    }
+  }
+  plan.assignments = out;
+}
+
+function applyPaint({ pid, a, b, add }) {
+  if (a > b) [a, b] = [b, a];
+  if (tool === 'erase') {
+    eraseRange(pid, a, b);
+    for (let w = a; w <= b; w++) setLeaveRaw(pid, w, 0);
+  } else if (tool === 'leave') {
+    for (let w = a; w <= b; w++) setLeaveRaw(pid, w, 5);
+  } else {
+    // Replace whatever is there, unless Shift was held (then only replace the same brush)
+    eraseRange(pid, a, b, add ? x => x.mvpId !== tool : () => false);
+    plan.assignments.push({ id: uid(), personId: pid, mvpId: tool, start: ws(a), end: ws(b), pct: 100 });
+    mergeAssignments();
+  }
+  commit();
+}
+
+function preview() {
+  document.querySelectorAll('.pc.pv').forEach(el => el.classList.remove('pv'));
+  if (!drag) return;
+  const [a, b] = drag.a <= drag.b ? [drag.a, drag.b] : [drag.b, drag.a];
+  document.querySelectorAll(`.pc[data-p="${drag.pid}"]`).forEach(el => {
+    const w = +el.dataset.w; if (w >= a && w <= b) el.classList.add('pv');
+  });
+}
+
+$('#grid').addEventListener('pointerdown', e => {
+  const cell = e.target.closest('.pc');
+  if (!cell || e.button > 0) return;
+  if (tool === 'select') { openPanel('cell', cell.dataset.p, +cell.dataset.w); return; }
+  e.preventDefault();
+  drag = { pid: cell.dataset.p, a: +cell.dataset.w, b: +cell.dataset.w, add: e.shiftKey };
+  preview();
+});
+window.addEventListener('pointermove', e => {
+  if (!drag) return;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  const cell = el && el.closest('.pc');
+  if (cell && cell.dataset.p === drag.pid && +cell.dataset.w !== drag.b) { drag.b = +cell.dataset.w; preview(); }
+});
+window.addEventListener('pointerup', () => { if (!drag) return; const d = drag; drag = null; applyPaint(d); });
+
+/* ---------- Mutations ---------- */
+function setLeaveRaw(pid, w, days) {
+  const key = ws(w);
+  plan.leave[pid] ||= {};
+  if (days > 0) plan.leave[pid][key] = Math.min(5, days); else delete plan.leave[pid][key];
+}
+function setLeave(pid, w, days) { setLeaveRaw(pid, w, Math.round(+days || 0)); commit(); }
+
+const COLORS = ['#3d6be0', '#1f9461', '#c98a00', '#c4466f', '#7d5bc9', '#0a8fa0', '#b4521c', '#56636f', '#2e8b57', '#a0398f'];
+function addMvp() {
+  const rel = plan.releases.find(r => !bcsOf(r) || parse(bcsOf(r)) >= todayMs()) || plan.releases[0];
+  const m = { id: uid(), key: 'NEW', name: 'New MVP', color: COLORS[plan.mvps.length % COLORS.length],
+              releaseId: rel ? rel.id : '', bac: 0, due: '' };
+  plan.mvps.push(m); save(); openPanel('mvp', m.id);
+}
+function addPerson(role) {
+  const p = { id: uid(), name: role === 'dev' ? 'New developer' : 'New tester', role };
+  plan.people.push(p); save(); openPanel('person', p.id);
+}
+function updA(id, field, v) {
+  const a = plan.assignments.find(x => x.id === id); if (!a) return;
+  if (field === 'pct') v = Math.max(1, Math.min(200, Math.round(+v || 100)));
+  a[field] = v;
+  if (W(a.end) < W(a.start)) { if (field === 'start') a.end = a.start; else a.start = a.end; }
+  mergeAssignments(); commit();
+}
+function delA(id) { plan.assignments = plan.assignments.filter(x => x.id !== id); commit(); }
+function addA(pid, mvpId, w) {
+  const start = w ?? Math.max(M.cw, M.lo);
+  plan.assignments.push({ id: uid(), personId: pid, mvpId: mvpId || (plan.mvps[0] ? plan.mvps[0].id : DEF),
+                          start: ws(start), end: ws(start + 3), pct: 100 });
+  commit();
+}
+function upd(coll, id, field, v) {
+  const x = plan[coll].find(o => o.id === id); if (!x) return;
+  if (field === 'bac') v = Math.max(0, Math.round(+v || 0));
+  x[field] = v; commit();
+}
+function del(coll, id) {
+  const label = { people: 'this team member and their assignments', mvps: 'this MVP and its assignments' }[coll];
+  if (!confirm(`Delete ${label}?`)) return;
+  plan[coll] = plan[coll].filter(o => o.id !== id);
+  if (coll === 'people') { plan.assignments = plan.assignments.filter(a => a.personId !== id); delete plan.leave[id]; }
+  if (coll === 'mvps') plan.assignments = plan.assignments.filter(a => a.mvpId !== id);
+  if (tool === id) tool = 'select';
+  closePanel(); commit();
+}
+function updRel(rid, field, v) { const r = release(rid); if (r) { r[field] = v; commit(); } }
+function updMs(rid, mid, field, v) {
+  const m = release(rid)?.milestones.find(x => x.id === mid); if (!m) return;
+  if (field === 'end' && !v) delete m.end; else m[field] = v;
+  release(rid).milestones.sort((a, b) => a.date.localeCompare(b.date));
+  commit();
+}
+function addMs(rid) { const r = release(rid); r.milestones.push({ id: uid(), name: 'Milestone', kind: 'other', date: r.start }); commit(); }
+function delMs(rid, mid) { const r = release(rid); r.milestones = r.milestones.filter(m => m.id !== mid); commit(); }
+function addRel() {
+  const last = plan.releases[plan.releases.length - 1];
+  const start = last ? (bcsOf(last) || last.start) : fmt(todayMs());
+  plan.releases.push({ id: uid(), name: 'New release', start, milestones: [] }); commit();
+}
+function delRel(rid) {
+  if (plan.mvps.some(m => m.releaseId === rid)) { alert('Move this release’s MVPs to another release first.'); return; }
+  if (!confirm('Delete this release?')) return;
+  plan.releases = plan.releases.filter(r => r.id !== rid); commit();
+}
+function updSetting(k, v) { plan.settings[k] = +v || DEFAULT_SETTINGS[k]; commit(); }
+
+/* ---------- Side panel ---------- */
+function openPanel(kind, id, w) { panelState = { kind, id, w }; render(); }
+function closePanel() { panelState = null; $('#panel').hidden = true; }
+
+const weekOptions = sel => {
+  const ws_ = [...M.weeks]; const s = W(sel);
+  if (!ws_.includes(s)) ws_.push(s), ws_.sort((a, b) => a - b);
+  return ws_.map(w => `<option value="${ws(w)}"${w === s ? ' selected' : ''}>${wlabel(w)}</option>`).join('');
+};
+const mvpOptions = sel => [...plan.mvps.map(m => [m.id, `${m.key} ${m.name}`]), [DEF, 'Defect duty']]
+  .map(([v, l]) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(l)}</option>`).join('');
+const personOptions = sel => plan.people
+  .map(p => `<option value="${p.id}"${p.id === sel ? ' selected' : ''}>${esc(p.name)} (${p.role === 'dev' ? 'Dev' : 'Test'})</option>`).join('');
+
+function assignmentRow(a, showPerson) {
+  return `<div class="it">
+    ${showPerson ? `<select onchange="updA('${a.id}','personId',this.value)">${personOptions(a.personId)}</select>`
+                 : `<select onchange="updA('${a.id}','mvpId',this.value)">${mvpOptions(a.mvpId)}</select>`}
+    <input type="number" min="1" max="200" step="5" value="${a.pct}" onchange="updA('${a.id}','pct',this.value)" title="% of capacity">%
+    <select onchange="updA('${a.id}','start',this.value)">${weekOptions(a.start)}</select> →
+    <select onchange="updA('${a.id}','end',this.value)">${weekOptions(a.end)}</select>
+    <button class="x" title="Remove" onclick="delA('${a.id}')">✕</button></div>`;
+}
+
+function renderPanel() {
+  const el = $('#panel');
+  if (!panelState) { el.hidden = true; return; }
+  const { kind, id, w } = panelState;
+  const close = '<button class="x" onclick="closePanel()" title="Close (Esc)">✕</button>';
+  let h = '';
+  const s = plan.settings;
+
+  if (kind === 'cell') {
+    const p = person(id); if (!p) return closePanel();
+    const c = M.cells[p.id][w] || { load: 0, cap: capacity(p.id, w), leave: leaveDays(p.id, w) };
+    const items = plan.assignments.filter(a => a.personId === p.id && W(a.start) <= w && W(a.end) >= w);
+    h = `<h2><span>${esc(p.name)} · ${wlabel(w)}</span>${close}</h2>
+      <div class="stats"><span>Capacity</span><b>${c.cap} days</b><span>Load</span><b>${c.load}%</b>
+        <span>Spare</span><b>${+(c.cap * Math.max(0, 100 - c.load) / 100).toFixed(1)} days</b></div>
+      <h3>Leave this week</h3>
+      <div class="f"><label>Days off</label><input type="number" min="0" max="5" value="${c.leave}"
+        onchange="setLeave('${p.id}',${w},this.value)"></div>
+      <h3>Work covering this week</h3>
+      <div class="list">${items.map(a => assignmentRow(a, false)).join('') || '<div class="note">Nothing planned.</div>'}</div>
+      <p><button onclick="addA('${p.id}',null,${w})">+ Add assignment from this week</button>
+      <button onclick="openPanel('person','${p.id}')">All of ${esc(p.name)}’s plan →</button></p>`;
+  }
+
+  if (kind === 'person') {
+    const p = person(id); if (!p) return closePanel();
+    const items = plan.assignments.filter(a => a.personId === p.id).sort((a, b) => a.start.localeCompare(b.start));
+    const lv = Object.entries(plan.leave[p.id] || {}).sort();
+    h = `<h2><span>${esc(p.name)}</span>${close}</h2>
+      <div class="f"><label>Name</label><input value="${esc(p.name)}" onchange="upd('people','${p.id}','name',this.value)">
+        <label>Role</label><select onchange="upd('people','${p.id}','role',this.value)">
+          <option value="dev"${p.role === 'dev' ? ' selected' : ''}>Developer</option>
+          <option value="test"${p.role === 'test' ? ' selected' : ''}>Tester</option></select></div>
+      <h3>Assignments &amp; defect duty</h3>
+      <div class="list">${items.map(a => assignmentRow(a, false)).join('') || '<div class="note">Nothing assigned.</div>'}</div>
+      <p><button onclick="addA('${p.id}')">+ Add assignment</button></p>
+      <h3>Leave</h3>
+      <div class="list">${lv.map(([wk, d]) => `<div class="it">${wlabel(W(wk))}
+        <input type="number" min="0" max="5" value="${d}" onchange="setLeave('${p.id}',${W(wk)},this.value)"> days
+        <button class="x" onclick="setLeave('${p.id}',${W(wk)},0)">✕</button></div>`).join('') || '<div class="note">No leave planned. Paint it with the Leave brush, or click a week.</div>'}</div>
+      <p><button class="danger" onclick="del('people','${p.id}')">Delete team member</button></p>`;
+  }
+
+  if (kind === 'mvp') {
+    const m = mvp(id); if (!m) return closePanel();
+    const x = M.mv[m.id], rel = release(m.releaseId);
+    const items = plan.assignments.filter(a => a.mvpId === m.id).sort((a, b) => a.start.localeCompare(b.start));
+    const def = bcsOf(rel);
+    h = `<h2><span>${esc(m.key)} ${esc(m.name)}</span>${close}</h2>
+      <div class="f">
+        <label>Name</label><input value="${esc(m.name)}" onchange="upd('mvps','${m.id}','name',this.value)">
+        <label>Key</label><input value="${esc(m.key)}" onchange="upd('mvps','${m.id}','key',this.value)">
+        <label>Colour</label><input type="color" value="${esc(m.color)}" onchange="upd('mvps','${m.id}','color',this.value)">
+        <label>Target release</label><select onchange="upd('mvps','${m.id}','releaseId',this.value)">
+          ${plan.releases.map(r => `<option value="${r.id}"${r.id === m.releaseId ? ' selected' : ''}>${esc(r.name)}</option>`).join('')}</select>
+        <label>BAC (hours)</label><input type="number" min="0" step="10" value="${m.bac || 0}" onchange="upd('mvps','${m.id}','bac',this.value)">
+        <label>Due date</label><span><input type="date" value="${esc(m.due)}" onchange="upd('mvps','${m.id}','due',this.value)">
+          ${m.due ? `<button class="x" onclick="upd('mvps','${m.id}','due','')" title="Use release default">↺</button>` : ''}</span>
+      </div>
+      <div class="note">${m.due ? 'Custom due date.' : def ? `Using ${esc(rel.name)} beta code stop (${dlong(parse(def))}).` : 'The target release has no beta code stop.'}</div>
+      <h3>Plan vs BAC</h3>
+      <div class="stats">
+        <span>Dev</span><b>${x.devW.size} weeks · ${Math.round(x.devH)} h</b>
+        <span>Test</span><b>${x.testW.size} weeks · ${Math.round(x.testH)} h</b>
+        <span>Total planned</span><b class="bac ${x.bacState}">${Math.round(x.total)} h${m.bac ? ` of ${m.bac} h BAC` : ''}</b>
+        ${x.late ? `<span>Status</span><b class="bac over">Late: work planned after ${dlong(x.dueMs)}</b>` : ''}
+      </div>
+      <div class="note">Planned hours = assigned % × available days × ${s.hoursPerDay} h. Flagged when under the BAC or more than ${s.bacTolerance}% over.</div>
+      <h3>Who works on it</h3>
+      <div class="list">${items.map(a => assignmentRow(a, true)).join('') || '<div class="note">No one yet. Pick this MVP’s brush and paint on people’s rows.</div>'}</div>
+      <p><button onclick="tool='${m.id}';closePanel();render()">Paint with this MVP</button>
+        <button class="danger" onclick="del('mvps','${m.id}')">Delete MVP</button></p>`;
+  }
+
+  if (kind === 'releases') {
+    const kinds = [['bcs', 'Beta code stop'], ['fcs', 'Final code stop'], ['st', 'System test'], ['other', 'Other']];
+    h = `<h2><span>Releases &amp; milestones</span>${close}</h2>
+      <div class="note">MVPs are due at their target release’s beta code stop unless they have their own date. The weeks from beta code stop to final code stop are shaded as the bug-fix window.</div>
+      ${plan.releases.map(r => `<div class="rel">
+        <div class="f"><label>Name</label><input value="${esc(r.name)}" onchange="updRel('${r.id}','name',this.value)">
+          <label>Starts</label><input type="date" value="${esc(r.start)}" onchange="updRel('${r.id}','start',this.value)"></div>
+        <h3>Milestones</h3><div class="list">${r.milestones.map(m => `<div class="it">
+          <input value="${esc(m.name)}" style="width:120px" onchange="updMs('${r.id}','${m.id}','name',this.value)">
+          <select onchange="updMs('${r.id}','${m.id}','kind',this.value)">${kinds.map(([k, l]) => `<option value="${k}"${k === m.kind ? ' selected' : ''}>${l}</option>`).join('')}</select>
+          <input type="date" value="${esc(m.date)}" onchange="updMs('${r.id}','${m.id}','date',this.value)">
+          ${m.kind === 'st' || m.end ? `→ <input type="date" value="${esc(m.end || '')}" onchange="updMs('${r.id}','${m.id}','end',this.value)">` : ''}
+          <button class="x" onclick="delMs('${r.id}','${m.id}')">✕</button></div>`).join('')}</div>
+        <p><button onclick="addMs('${r.id}')">+ Milestone</button> <button class="danger" onclick="delRel('${r.id}')">Delete release</button></p>
+      </div>`).join('')}
+      <button onclick="addRel()">+ Add release</button>`;
+  }
+
+  if (kind === 'settings') {
+    h = `<h2><span>Settings &amp; data</span>${close}</h2>
+      <div class="f">
+        <label>Hours per day</label><input type="number" min="1" max="24" value="${s.hoursPerDay}" onchange="updSetting('hoursPerDay',this.value)">
+        <label>Short of work below</label><span><input type="number" min="1" max="100" value="${s.outThreshold}" onchange="updSetting('outThreshold',this.value)"> % load</span>
+        <label>BAC tolerance</label><span><input type="number" min="0" max="200" value="${s.bacTolerance}" onchange="updSetting('bacTolerance',this.value)"> % over</span>
+      </div>
+      <h3>Data</h3>
+      <div class="note">The plan is saved in this browser only. Export a copy now and then to keep it safe.</div>
+      <p><button onclick="exportJson()">Export JSON</button> <button onclick="$('#importFile').click()">Import JSON</button></p>
+      <p><button onclick="resetPlan('sample')">Reset to sample plan</button> <button class="danger" onclick="resetPlan('empty')">Reset to empty</button></p>`;
+  }
+
+  el.innerHTML = h;
+  el.hidden = false;
+}
+
+/* ---------- Import / export ---------- */
+function exportJson() {
+  const blob = new Blob([JSON.stringify(plan, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `team-plan-${fmt(todayMs())}.json`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+$('#importFile').addEventListener('change', async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  try {
+    const p = JSON.parse(await f.text());
+    if (!Array.isArray(p.people) || !Array.isArray(p.mvps) || !Array.isArray(p.assignments) || !Array.isArray(p.releases))
+      throw new Error('This file is not a team plan.');
+    p.leave ||= {}; p.settings = { ...DEFAULT_SETTINGS, ...p.settings };
+    if (!confirm('Replace the current plan with the imported one?')) return;
+    plan = p; tool = 'select'; commit();
+  } catch (err) { alert('Import failed: ' + err.message); }
+});
+function resetPlan(kind) {
+  if (!confirm(kind === 'empty' ? 'Clear all people, MVPs, assignments and leave? Releases are kept.' : 'Replace the current plan with the sample plan?')) return;
+  plan = kind === 'empty' ? { ...emptyPlan(), releases: plan.releases } : samplePlan();
+  tool = 'select'; closePanel(); commit();
+}
+
+/* ---------- Wiring ---------- */
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tool]');
+  if (t) { tool = t.dataset.tool; renderPalette(); return; }
+  const o = e.target.closest('[data-open]');
+  if (o) { const [k, id] = o.dataset.open.split(':'); openPanel(k, id); return; }
+  const act = e.target.closest('[data-act]');
+  if (act) {
+    if (act.dataset.act === 'addMvp') addMvp();
+    if (act.dataset.act === 'addPerson') addPerson(act.dataset.role);
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key !== 'Escape') return;
+  if (tool !== 'select') { tool = 'select'; renderPalette(); } else closePanel();
+});
+$('#todayBtn').onclick = scrollToToday;
+$('#relBtn').onclick = () => openPanel('releases');
+$('#setBtn').onclick = () => openPanel('settings');
+$('#spareToggle').onchange = e => { showSpare = e.target.checked; render(); };
+window.addEventListener('resize', () => render());
+
+load();
+render();
+</script>
+</body>
+</html>
