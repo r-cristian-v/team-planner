@@ -12,7 +12,7 @@
   --spare: #1b7f45; --sparebg: #dcf3e5; --leave: #8b95a5;
   --ms: #7048c8; --window: rgba(112, 72, 200, .07); --st: rgba(112, 72, 200, .22);
   --today: #2f62f5; --accent: #2f62f5; --past: rgba(140, 150, 170, .16);
-  --labw: 290px; --cw: 46px;
+  --labw: 320px; --cw: 46px;
 }
 @media (prefers-color-scheme: dark) {
   :root {
@@ -115,15 +115,17 @@ input[type=color] { padding: 0 2px; width: 42px; height: 26px; }
 .sec .fill { flex: none; background: var(--bg); border-bottom: 1px solid var(--line2); }
 
 /* Load strips */
-.strip .c { height: 26px; font-size: 10.5px; text-align: center; padding-top: 6px; font-variant-numeric: tabular-nums; }
-.strip.test .c { height: 34px; padding-top: 9px; font-size: 11.5px; font-weight: 600; }
+.strip .c { height: 32px; font-size: 10.5px; text-align: center; padding-top: 9px; font-variant-numeric: tabular-nums; }
+.strip.test .c { height: 40px; padding-top: 12px; font-size: 11.5px; font-weight: 600; }
 .strip.test .lab { font-weight: 700; }
 .strip .c.over { background: var(--overbg); color: var(--over); font-weight: 700; }
 .strip .c.out { background: var(--outbg); color: var(--out); }
 
 /* MVP rows */
-.mrow .lab { height: 52px; align-items: flex-start; padding-top: 5px; }
-.mrow .c { height: 52px; }
+.mrow .lab { height: 62px; align-items: flex-start; padding-top: 9px; }
+.mrow .c { height: 62px; }
+.mrow.sub .lab { height: 56px; padding-left: 26px; padding-top: 7px; }
+.mrow.sub .c { height: 56px; }
 .sw { width: 12px; height: 12px; border-radius: 3px; flex: none; margin-top: 2px; }
 .lt { min-width: 0; flex: 1; }
 .lt > div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -135,8 +137,8 @@ input[type=color] { padding: 0 2px; width: 42px; height: 26px; }
 .bac.over { color: var(--over); font-weight: 600; }
 .bac.ok { color: var(--spare); }
 .dv, .ts { position: absolute; left: 0; right: -1px; height: 15px; }
-.dv { top: 7px; }
-.ts { top: 29px; }
+.dv { top: calc(50% - 18px); }
+.ts { top: calc(50% + 3px); }
 .mrow .c.late { background: repeating-linear-gradient(135deg, var(--overbg) 0 4px, transparent 4px 8px); }
 .due { position: absolute; top: 0; bottom: 0; width: 0; border-left: 2px dashed var(--over); z-index: 1; }
 .due::before {
@@ -144,11 +146,11 @@ input[type=color] { padding: 0 2px; width: 42px; height: 26px; }
 }
 
 /* People rows */
-.prow .lab, .prow .c { height: 32px; }
+.prow .lab, .prow .c { height: 38px; }
 .prow .lab .nm { font-weight: 600; }
 .role { font-size: 10px; border-radius: 4px; padding: 0 5px; background: var(--hover); color: var(--muted); }
 .pc { cursor: pointer; overflow: hidden; }
-.segs { position: absolute; inset: 2px 0 2px 0; display: flex; flex-direction: column; gap: 1px; }
+.segs { position: absolute; inset: 5px 0 5px 0; display: flex; flex-direction: column; gap: 1px; }
 .seg {
   flex: 1; color: #fff; font-size: 9.5px; font-weight: 600; text-align: center; overflow: hidden;
   white-space: nowrap; text-shadow: 0 0 2px rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center;
@@ -163,7 +165,7 @@ input[type=color] { padding: 0 2px; width: 42px; height: 26px; }
 .lv span { background: var(--panel); border-radius: 3px; padding: 0 2px; margin-bottom: 1px; }
 .lv.long { outline: 2px solid var(--leave); outline-offset: -2px; }
 .pc.over { box-shadow: inset 0 0 0 2px var(--over); }
-.pc.over .segs { inset: 3px 2px; }
+.pc.over .segs { inset: 5px 2px; }
 .pc.out { background: var(--outbg); }
 .pc.spare { background: var(--sparebg); }
 .pc .spt {
@@ -178,6 +180,38 @@ input[type=color] { padding: 0 2px; width: 42px; height: 26px; }
 .pc.pv { box-shadow: inset 0 0 0 2px var(--accent); background: var(--hover); }
 body.painting .pc { cursor: crosshair; touch-action: none; }
 body.painting { user-select: none; }
+
+/* People on one MVP (deepest zoom) */
+.arow .lab, .arow .c { height: 30px; }
+.arow .lab { padding-left: 50px; font-size: 12px; background: var(--bg); }
+.arow .fill { flex: none; border-bottom: 1px solid var(--line2); }
+.ac {
+  position: absolute; inset: 6px 0; font-size: 9.5px; font-weight: 600; color: #fff;
+  display: flex; align-items: center; justify-content: center; text-shadow: 0 0 2px rgba(0, 0, 0, .5);
+}
+.arow [data-cell] { cursor: pointer; }
+
+/* Zoom: folded rows open and close by animating their height */
+.kids { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .25s ease; }
+.kids.open { grid-template-rows: 1fr; }
+.kids > .in { min-height: 0; overflow: clip; opacity: 0; transition: opacity .25s ease; }
+.kids.open > .in { opacity: 1; }
+.caret {
+  width: 16px; flex: none; border: 0; background: none; padding: 0; margin-top: 1px;
+  color: var(--muted); font-size: 9px; transition: transform .25s ease;
+}
+.caret:hover { color: var(--ink); background: none; }
+.caret.open { transform: rotate(90deg); }
+.caret.none { visibility: hidden; }
+body.z0 .km, body:not(.z0) .kp { display: none; }
+.zoom { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.zoom button { border: 0; border-radius: 0; padding: 4px 9px; font-size: 12px; }
+.zoom button + button { border-left: 1px solid var(--line); }
+.zoom button.on { background: var(--accent); color: #fff; }
+.tool.on-pk { background: var(--hover); }
+@media (prefers-reduced-motion: reduce) {
+  .kids, .kids > .in, .caret { transition: none; }
+}
 
 /* Overlay */
 #ov { position: absolute; inset: 0; pointer-events: none; z-index: 1; }
@@ -243,6 +277,7 @@ body.painting { user-select: none; }
   <h1>Team Planner</h1>
   <div class="palette" id="palette"></div>
   <div class="actions">
+    <div class="zoom" id="zoomCtl" title="Zoom: Ctrl + scroll, or Ctrl + / Ctrl −"></div>
     <label class="hint"><input type="checkbox" id="spareToggle"> Show spare capacity</label>
     <button id="todayBtn">Today</button>
     <button id="relBtn">Releases</button>
@@ -269,20 +304,32 @@ body.painting { user-select: none; }
         Purple lines mark code stops, and the shaded area between beta and final code stop is the bug-fix window.
         The blue line is today.</li>
       <li><b>Load strips</b>: booked days against available days for all testers, then all developers.</li>
-      <li><b>MVPs</b>: the solid bar is dev weeks and the striped bar is test weeks, both taken from who is
-        assigned. The dashed red line is the due date.</li>
+      <li><b>Packages</b>: each package holds one or more MVPs (SRCH-1, SRCH-2, …). The solid bar is dev weeks and
+        the striped bar is test weeks, both taken from who is assigned. The dashed red line is the due date. A package
+        row combines its MVPs: late if any of them is late, BAC summed.</li>
       <li><b>Developers and Testers</b>: one row per team member, showing what they work on each week, their leave,
         and their flags.</li>
+    </ul>
+
+    <h3>Zooming</h3>
+    <ul>
+      <li><kbd>Ctrl</kbd> + scroll (or <kbd>Ctrl</kbd> <kbd>+</kbd> / <kbd>Ctrl</kbd> <kbd>−</kbd>) zooms between three
+        levels: <b>Packages</b>, <b>MVPs</b>, and <b>People</b> on each MVP. The row under the mouse stays in place.
+        The switch in the top bar does the same.</li>
+      <li>The ▶ next to a package or MVP opens just that one. The next zoom resets them.</li>
+      <li>At the Packages level, people’s weeks show the package key (SRCH). From the MVPs level down they show the MVP (SRCH-2).</li>
+      <li>On this page these keys zoom the planner, not the page. The browser menu still zooms the page.</li>
     </ul>
 
     <h3>Planning work</h3>
     <ul>
       <li>Pick a brush in the top bar (an MVP, <b>Defects</b> or <b>Leave</b>), then <b>drag across a person’s
-        weeks</b>. Painting replaces what was there.</li>
+        weeks</b>. Painting replaces what was there. A package with several MVPs opens its MVP brushes when clicked.</li>
       <li>Hold <kbd>Shift</kbd> while dragging to add work alongside what’s already there, for example half on two MVPs.</li>
       <li><b>Erase</b> removes work and leave from the weeks you drag over.</li>
       <li>With <b>Select</b>, click a week on a person’s row to set leave days (1–5) or change the % and week
-        range of an assignment. Click a name or an MVP to edit it.</li>
+        range of an assignment. Click a name, a package or an MVP to edit it. Add MVPs, reorder them, and set their
+        own due dates from the package.</li>
       <li>Leave painted with the brush counts as 5 days. Click the week to change it to fewer days.</li>
       <li><b>Releases</b> edits release dates and milestones. <b>Settings</b> holds the thresholds and
         import/export.</li>
@@ -309,8 +356,8 @@ body.painting { user-select: none; }
       <li><b>Capacity</b> is 5 days a week minus leave. <b>Load</b> adds up the % of every assignment and defect duty in the week.</li>
       <li><b>Planned hours</b> for an MVP are assigned % × available days × hours per day (8 by default).
         They’re compared with the <b>BAC</b>: amber if under it, red if more than 20% over.</li>
-      <li>An MVP’s <b>due date</b> is its target release’s beta code stop unless you set its own date. Any dev
-        or test work after it makes the MVP late.</li>
+      <li>An MVP’s <b>due date</b> is its target release’s beta code stop unless you set an earlier one, for
+        example when another team depends on it. Any dev or test work after it makes the MVP late.</li>
     </ul>
 
     <h3>Your data</h3>
@@ -321,6 +368,8 @@ body.painting { user-select: none; }
     <h3>Keyboard</h3>
     <div class="keys">
       <kbd>?</kbd><span>Open this help</span>
+      <span><kbd>Ctrl</kbd> + scroll</span><span>Zoom between packages, MVPs and people</span>
+      <span><kbd>Ctrl</kbd> <kbd>+</kbd> <kbd>−</kbd> <kbd>0</kbd></span><span>Zoom in, out, or back to packages</span>
       <kbd>Esc</kbd><span>Close this help, go back to Select, or close the side panel</span>
       <kbd>Shift</kbd><span>While painting, add instead of replace</span>
     </div>
@@ -382,7 +431,7 @@ function defaultReleases() {
 }
 
 function emptyPlan() {
-  return { settings: { ...DEFAULT_SETTINGS }, people: [], releases: defaultReleases(), mvps: [], assignments: [], leave: {} };
+  return { settings: { ...DEFAULT_SETTINGS }, people: [], releases: defaultReleases(), packages: [], mvps: [], assignments: [], leave: {} };
 }
 
 function samplePlan() {
@@ -393,43 +442,68 @@ function samplePlan() {
     ['eli', 'Eli', 'dev'], ['femi', 'Femi', 'dev'], ['gus', 'Gus', 'dev'], ['hana', 'Hana', 'dev'],
     ['ivo', 'Ivo', 'dev'], ['jo', 'Jo', 'test'], ['kai', 'Kai', 'test'], ['lena', 'Lena', 'test'],
   ].map(([id, name, role]) => ({ id, name, role }));
+  const packages = [
+    ['sync', 'SYNC', 'Offline sync', '#3d6be0'],
+    ['sso', 'SSO', 'SSO login', '#1f9461'],
+    ['rpt', 'RPT', 'Reporting v2', '#c98a00'],
+    ['push', 'PUSH', 'Push notifications', '#c4466f'],
+    ['aud', 'AUD', 'Audit log', '#7d5bc9'],
+    ['srch', 'SRCH', 'Search revamp', '#0a8fa0'],
+    ['dark', 'DARK', 'Dark mode', '#56636f'],
+    ['pay', 'PAY', 'Payments v3', '#b4521c'],
+  ].map(([id, key, name, color]) => ({ id, key, name, color }));
   const mvps = [
-    ['sync', 'SYNC', 'Offline sync', '#3d6be0', 'r274', 1400],
-    ['sso', 'SSO', 'SSO login', '#1f9461', 'r274', 700],
-    ['rpt', 'RPT', 'Reporting v2', '#c98a00', 'r274', 1100],
-    ['push', 'PUSH', 'Push notifications', '#c4466f', 'r274', 500],
-    ['aud', 'AUD', 'Audit log', '#7d5bc9', 'r274', 600],
-    ['srch', 'SRCH', 'Search revamp', '#0a8fa0', 'r274', 1300],
-    ['dark', 'DARK', 'Dark mode', '#56636f', 'r2710', 400],
-    ['pay', 'PAY', 'Payments v3', '#b4521c', 'r2710', 1600],
-  ].map(([id, key, name, color, releaseId, bac]) => ({ id, key, name, color, releaseId, bac, due: '' }));
+    ['sync1', 'sync', 'Sync engine', 'r274', 700],
+    ['sync2', 'sync', 'Conflict resolution', 'r274', 360],
+    ['sync3', 'sync', 'UI', 'r274', 270],
+    ['sso1', 'sso', '', 'r274', 840],
+    ['rpt1', 'rpt', 'Data model', 'r274', 500],
+    ['rpt2', 'rpt', 'Dashboards', 'r274', 1000],
+    ['push1', 'push', '', 'r274', 500],
+    ['aud1', 'aud', '', 'r274', 600],
+    ['srch1', 'srch', 'Backend', 'r274', 780, '2026-12-18'],
+    ['srch2', 'srch', 'Frontend', 'r2710', 880],
+    ['dark1', 'dark', '', 'r2710', 400],
+    ['pay1', 'pay', '', 'r2710', 1600],
+  ].map(([id, packageId, desc, releaseId, bac, due = '']) => ({ id, packageId, desc, releaseId, bac, due }));
   const A = (p, m, s, e, pct = 100) => ({ id: uid(), personId: p, mvpId: m, start: w(s), end: w(e), pct });
   const assignments = [
-    A('ana', 'sync', 0, 12), A('ana', DEF, 13, 19), A('ana', 'pay', 20, 35),
-    A('ben', 'sync', 0, 12), A('ben', DEF, 13, 19, 50), A('ben', 'pay', 20, 35),
-    A('chen', 'sso', 0, 8), A('chen', 'dark', 19, 24),
-    A('dara', 'sso', 2, 8), A('dara', DEF, 9, 18), A('dara', 'dark', 19, 24),
-    A('eli', 'rpt', 3, 18),
-    A('femi', 'rpt', 6, 18),
-    A('gus', 'push', 2, 5), A('gus', 'aud', 9, 17),
-    A('hana', 'srch', 0, 7), A('hana', 'aud', 8, 17),
-    A('ivo', 'srch', 0, 14), A('ivo', DEF, 15, 22, 50),
-    A('jo', 'sync', 6, 15), A('jo', 'aud', 14, 21),
-    A('kai', 'push', 4, 7), A('kai', 'sso', 5, 10), A('kai', 'srch', 11, 16),
-    A('lena', 'srch', 6, 9), A('lena', 'rpt', 10, 19),
+    A('ana', 'sync1', 0, 7), A('ana', 'sync2', 8, 12), A('ana', DEF, 13, 19), A('ana', 'pay1', 20, 35),
+    A('ben', 'sync1', 0, 5), A('ben', 'sync3', 6, 12), A('ben', DEF, 13, 19, 50), A('ben', 'pay1', 20, 35),
+    A('chen', 'sso1', 0, 8), A('chen', 'dark1', 19, 24),
+    A('dara', 'sso1', 2, 8), A('dara', DEF, 9, 18), A('dara', 'dark1', 19, 24),
+    A('eli', 'rpt1', 3, 10), A('eli', 'rpt2', 11, 18),
+    A('femi', 'rpt2', 6, 18),
+    A('gus', 'push1', 2, 5), A('gus', 'aud1', 9, 17),
+    A('hana', 'srch1', 0, 7), A('hana', 'aud1', 8, 17),
+    A('ivo', 'srch1', 0, 7), A('ivo', 'srch2', 8, 24),
+    A('jo', 'sync1', 6, 9), A('jo', 'sync2', 10, 15), A('jo', 'aud1', 14, 21),
+    A('kai', 'push1', 4, 7), A('kai', 'sso1', 5, 10), A('kai', 'srch2', 11, 16),
+    A('lena', 'srch1', 6, 9), A('lena', 'rpt1', 10, 13), A('lena', 'rpt2', 14, 19),
   ];
   const leave = {
     ana: { [w(12)]: 5 }, chen: { [w(12)]: 5 }, jo: { [w(12)]: 3 }, kai: { [w(13)]: 2 },
     eli: { [w(7)]: 4 }, lena: { [w(12)]: 5, [w(13)]: 5 }, femi: { [w(16)]: 2 },
   };
-  return { settings: { ...DEFAULT_SETTINGS }, people, releases: defaultReleases(), mvps, assignments, leave };
+  return { settings: { ...DEFAULT_SETTINGS }, people, releases: defaultReleases(), packages, mvps, assignments, leave };
+}
+
+// Plans saved before packages existed: each MVP becomes a package with one MVP
+function upgrade(p) {
+  p.settings = { ...DEFAULT_SETTINGS, ...p.settings };
+  p.leave ||= {};
+  if (!p.packages) {
+    p.packages = p.mvps.map(m => ({ id: 'pk' + m.id, key: m.key || m.name, name: m.name, color: m.color }));
+    p.mvps = p.mvps.map(m => ({ id: m.id, packageId: 'pk' + m.id, desc: '', releaseId: m.releaseId, bac: m.bac, due: m.due || '' }));
+  }
+  return p;
 }
 
 let plan;
 function load() {
   try {
     const raw = localStorage.getItem(STORE);
-    if (raw) { plan = JSON.parse(raw); plan.settings = { ...DEFAULT_SETTINGS, ...plan.settings }; return; }
+    if (raw) { plan = upgrade(JSON.parse(raw)); return; }
   } catch (e) { console.warn('Could not read saved plan', e); }
   plan = samplePlan();
 }
@@ -446,8 +520,27 @@ const leaveDays = (pid, w) => (plan.leave[pid] || {})[ws(w)] || 0;
 const capacity = (pid, w) => Math.max(0, 5 - leaveDays(pid, w));
 function bcsOf(rel) { const m = rel && rel.milestones.find(x => x.kind === 'bcs'); return m ? m.date : ''; }
 function dueOf(m) { return m.due || bcsOf(release(m.releaseId)); }
-const mvpLabel = id => id === DEF ? 'Defects' : (mvp(id) ? (mvp(id).key || mvp(id).name) : '?');
-const mvpColor = id => id === DEF ? '#6f7a8c' : (mvp(id) ? mvp(id).color : '#999');
+const pkg = id => plan.packages.find(p => p.id === id);
+const mvpsOf = pid => plan.mvps.filter(m => m.packageId === pid);
+const mvpNum = m => mvpsOf(m.packageId).indexOf(m) + 1;
+const mvpKey = m => `${pkg(m.packageId)?.key ?? '?'}-${mvpNum(m)}`;
+const mvpTitle = m => `MVP${mvpNum(m)}${m.desc ? ': ' + m.desc : ''}`;
+const mvpLabel = id => id === DEF ? 'Defects' : (mvp(id) ? mvpKey(mvp(id)) : '?');
+const pkgLabel = id => id === DEF ? 'DEF' : (mvp(id) ? pkg(mvp(id).packageId)?.key ?? '?' : '?');
+
+// MVPs take shades of their package's colour: base, lighter, darker, lighter still, darker still
+const SHADES = [0, .3, -.25, .5, -.4];
+function shade(hex, t) {
+  const n = parseInt(hex.slice(1), 16), c = [n >> 16, (n >> 8) & 255, n & 255];
+  const mix = c.map(v => Math.round(t >= 0 ? v + (255 - v) * t : v * (1 + t)));
+  return '#' + mix.map(v => v.toString(16).padStart(2, '0')).join('');
+}
+function mvpColor(id) {
+  if (id === DEF) return '#6f7a8c';
+  const m = mvp(id), p = m && pkg(m.packageId);
+  if (!p) return '#999';
+  return shade(p.color, SHADES[(mvpNum(m) - 1) % SHADES.length]);
+}
 
 /* ---------- Model: everything the views need, computed per render ---------- */
 let M;
@@ -483,13 +576,15 @@ function compute() {
   for (const m of plan.mvps) {
     const due = dueOf(m);
     mv[m.id] = { devH: 0, testH: 0, devW: new Set(), testW: new Set(), devP: new Set(), testP: new Set(),
-                 week: {}, dueMs: due ? parse(due) : null, late: false, lateW: new Set() };
+                 week: {}, dueMs: due ? parse(due) : null, late: false, lateW: new Set(), who: {} };
   }
   for (const a of plan.assignments) {
     const x = mv[a.mvpId], p = person(a.personId); if (!x || !p) continue;
     const isDev = p.role === 'dev';
     (isDev ? x.devP : x.testP).add(p.name);
+    const who = (x.who[p.id] ||= {});
     for (let w = W(a.start); w <= W(a.end); w++) {
+      who[w] = (who[w] || 0) + +a.pct;
       const h = a.pct / 100 * capacity(p.id, w) * s.hoursPerDay;
       if (isDev) { x.devH += h; x.devW.add(w); } else { x.testH += h; x.testW.add(w); }
       (x.week[w] ||= { dev: [], test: [] })[isDev ? 'dev' : 'test'].push(`${p.name} ${a.pct}%`);
@@ -500,6 +595,29 @@ function compute() {
     const x = mv[m.id], total = x.devH + x.testH, bac = +m.bac || 0;
     x.total = total;
     x.bacState = !bac ? 'none' : total < bac ? 'under' : total > bac * (1 + s.bacTolerance / 100) ? 'over' : 'ok';
+  }
+
+  // Per package: its MVPs combined
+  const pk = {};
+  for (const p of plan.packages) {
+    const kids = mvpsOf(p.id).map(m => mv[m.id]);
+    const y = { devH: 0, testH: 0, total: 0, bac: 0, devW: new Set(), testW: new Set(), devP: new Set(), testP: new Set(),
+                week: {}, dueMs: null, late: false, lateW: new Set(), releases: new Set() };
+    mvpsOf(p.id).forEach(m => { y.bac += +m.bac || 0; const r = release(m.releaseId); if (r) y.releases.add(r.name); });
+    for (const x of kids) {
+      y.devH += x.devH; y.testH += x.testH; y.total += x.total;
+      x.devW.forEach(w => y.devW.add(w)); x.testW.forEach(w => y.testW.add(w));
+      x.devP.forEach(n => y.devP.add(n)); x.testP.forEach(n => y.testP.add(n));
+      x.lateW.forEach(w => y.lateW.add(w));
+      if (x.late) y.late = true;
+      if (x.dueMs != null && (y.dueMs == null || x.dueMs > y.dueMs)) y.dueMs = x.dueMs;
+      for (const w in x.week) {
+        const t = (y.week[w] ||= { dev: [], test: [] });
+        t.dev.push(...x.week[w].dev); t.test.push(...x.week[w].test);
+      }
+    }
+    y.bacState = !y.bac ? 'none' : y.total < y.bac ? 'under' : y.total > y.bac * (1 + s.bacTolerance / 100) ? 'over' : 'ok';
+    pk[p.id] = y;
   }
 
   // Role load strips
@@ -532,7 +650,7 @@ function compute() {
       }
     }
   }
-  return { cw, lo, hi, weeks, cells, mv, strip, flags, runs };
+  return { cw, lo, hi, weeks, cells, mv, pk, strip, flags, runs };
 }
 
 /* ---------- Geometry ---------- */
@@ -546,12 +664,20 @@ let panelState = null;
 let showSpare = false;
 let drag = null;
 let firstRender = true;
+let palPkg = null; // package whose MVP brushes are showing in the brush bar
+
+// Zoom: 0 = packages, 1 = MVPs, 2 = people per MVP. Carets override it per package or MVP until the next zoom.
+const ZOOM_NAMES = ['Packages', 'MVPs', 'People'];
+let zoom = 0;
+try { zoom = Math.min(2, Math.max(0, +localStorage.getItem(STORE + '.zoom') || 0)); } catch (e) {}
+const openOverride = {}; // 'pk:<id>' or 'mv:<id>' -> true/false
 
 /* ---------- Rendering ---------- */
 function render() {
   LABW = cssNum('--labw'); CW = cssNum('--cw');
   M = compute();
   renderPalette();
+  renderZoomCtl();
   renderAlerts();
   renderGrid();
   renderPanel();
@@ -565,7 +691,14 @@ function renderPalette() {
     t('select', '↖ Select') + t('erase', '⌫ Erase') + '<span class="sep"></span>' +
     t('leave', 'Leave', 'repeating-linear-gradient(45deg,var(--leave) 0 2px,transparent 2px 4px)') +
     t(DEF, 'Defects', '#6f7a8c') + '<span class="sep"></span>' +
-    plan.mvps.map(m => t(m.id, m.key || m.name, m.color)).join('') +
+    plan.packages.map(p => {
+      const ms = mvpsOf(p.id);
+      if (ms.length === 1) return t(ms[0].id, p.key, mvpColor(ms[0].id));
+      const open = palPkg === p.id || ms.some(m => m.id === tool);
+      return `<button class="tool${open ? ' on-pk' : ''}" data-palpkg="${p.id}" title="${esc(p.name)}: pick an MVP">` +
+        `<span class="sw" style="background:${esc(p.color)}"></span>${esc(p.key)} ${open ? '◂' : '▸'}</button>` +
+        (open ? ms.map(m => t(m.id, `${mvpNum(m)}${m.desc ? ' ' + m.desc : ''}`, mvpColor(m.id))).join('') : '');
+    }).join('') +
     `<span class="hint">${tool === 'select' ? 'Pick a brush, then drag across a person’s weeks.'
       : 'Drag across weeks to paint · Shift adds alongside existing work · Esc to stop'}</span>`;
   document.body.classList.toggle('painting', tool !== 'select');
@@ -590,9 +723,10 @@ function renderAlerts() {
   }
   for (const m of plan.mvps) {
     const x = mv[m.id];
-    if (x.late) mvpA.push(chip('over', `${m.key || m.name} runs past its due date (${dlong(x.dueMs)})`, 'mvp:' + m.id));
-    if (x.bacState === 'under') mvpA.push(chip('out', `${m.key || m.name} planned ${Math.round(x.total)} h < BAC ${m.bac} h`, 'mvp:' + m.id));
-    if (x.bacState === 'over') mvpA.push(chip('over', `${m.key || m.name} planned ${Math.round(x.total)} h > BAC ${m.bac} h`, 'mvp:' + m.id));
+    const k = mvpKey(m);
+    if (x.late) mvpA.push(chip('over', `${k} runs past its due date (${dlong(x.dueMs)})`, 'mvp:' + m.id));
+    if (x.bacState === 'under') mvpA.push(chip('out', `${k} planned ${Math.round(x.total)} h < BAC ${m.bac} h`, 'mvp:' + m.id));
+    if (x.bacState === 'over') mvpA.push(chip('over', `${k} planned ${Math.round(x.total)} h > BAC ${m.bac} h`, 'mvp:' + m.id));
   }
   const grp = (label, items) => items.length ? `<div class="grp"><span class="gl">${label}</span>${items.join('')}</div>` : '';
   $('#alerts').innerHTML = (grp('Act now', now) + grp('Next 12 weeks', soon) + grp('MVPs', mvpA)) ||
@@ -600,7 +734,7 @@ function renderAlerts() {
 }
 
 function renderGrid() {
-  const { weeks, cw, cells, mv, strip, flags } = M;
+  const { weeks, cw, cells, strip, flags } = M;
   const s = plan.settings;
   const width = LABW + weeks.length * CW;
   const cls = w => (w < cw ? ' past' : '') + (w === cw ? ' now' : '');
@@ -640,30 +774,9 @@ function renderGrid() {
 
   const section = (label, btn) => `<div class="row sec"><div class="lab"><span>${label}</span>${btn}</div><div class="fill" style="width:${weeks.length * CW}px"></div></div>`;
 
-  // MVP rows, grouped by target release
-  out.push(section('MVPs', '<button data-act="addMvp">+ Add MVP</button>'));
-  const relOrder = id => plan.releases.findIndex(r => r.id === id);
-  const mvps = [...plan.mvps].sort((a, b) => relOrder(a.releaseId) - relOrder(b.releaseId));
-  for (const m of mvps) {
-    const x = mv[m.id], rel = release(m.releaseId);
-    const names = `Dev: ${[...x.devP].join(', ') || '—'} · Test: ${[...x.testP].join(', ') || '—'}`;
-    const bac = m.bac ? `<span class="bac ${x.bacState}">${Math.round(x.total)} / ${m.bac} h</span>` : '<span>no BAC</span>';
-    const dueW = x.dueMs != null ? wOf(x.dueMs) : null;
-    out.push(`<div class="row mrow"><div class="lab click" data-open="mvp:${m.id}" title="${esc(names)}">
-      <span class="sw" style="background:${esc(m.color)}"></span>
-      <div class="lt"><div class="l1"><b>${esc(m.key)}</b> ${esc(m.name)} <span class="tag">${esc(rel ? rel.name : '?')}</span>
-        ${x.late ? '<span class="bad">late</span>' : ''}</div>
-        <div class="l2">${esc(names)}</div>
-        <div class="l3">Dev ${x.devW.size} wks · Test ${x.testW.size} wks · ${bac}</div></div></div>
-      ${weeks.map(w => {
-        const wk = x.week[w], late = x.lateW.has(w);
-        const tip = wk ? `${wlabel(w)}\nDev: ${wk.dev.join(', ') || '—'}\nTest: ${wk.test.join(', ') || '—'}` : wlabel(w);
-        const dv = wk && wk.dev.length ? `<div class="dv" style="background:${esc(m.color)}"></div>` : '';
-        const ts = wk && wk.test.length ? `<div class="ts" style="background:repeating-linear-gradient(135deg,${esc(m.color)} 0 5px,transparent 5px 8px);box-shadow:inset 0 0 0 1px ${esc(m.color)}"></div>` : '';
-        const due = w === dueW ? `<div class="due" style="left:${((x.dueMs - mon(w)) / DAY + 1) / 7 * 100}%" title="Due ${dlong(x.dueMs)}"></div>` : '';
-        return `<div class="c${late ? ' late' : ''}${cls(w)}" title="${esc(tip)}">${dv}${ts}${due}</div>`;
-      }).join('')}</div>`);
-  }
+  // Packages, MVPs and the people on each MVP, folded to the zoom level
+  out.push(section('Packages', '<button data-act="addPackage">+ Add package</button>'));
+  out.push(packageRows(cls));
 
   // People rows
   const personRows = role => plan.people.filter(p => p.role === role).map(p => {
@@ -698,6 +811,135 @@ function renderGrid() {
   grid.innerHTML = out.join('') + `<div id="ov">${ov.join('')}</div>`;
 }
 
+/* Package section: a package row, then (folded) its MVP rows, each with (folded) one row per person on it.
+   A package with one MVP has no MVP rows of its own: its people hang straight off the package row. */
+const isOpen = key => openOverride[key] ?? (key.startsWith('pk:') ? zoom >= 1 : zoom >= 2);
+
+function barCells(x, color, cls) {
+  const dueW = x.dueMs != null ? wOf(x.dueMs) : null;
+  return M.weeks.map(w => {
+    const wk = x.week[w], late = x.lateW.has(w);
+    const tip = wk ? `${wlabel(w)}\nDev: ${wk.dev.join(', ') || '—'}\nTest: ${wk.test.join(', ') || '—'}` : wlabel(w);
+    const dv = wk && wk.dev.length ? `<div class="dv" style="background:${esc(color)}"></div>` : '';
+    const ts = wk && wk.test.length ? `<div class="ts" style="background:repeating-linear-gradient(135deg,${esc(color)} 0 5px,transparent 5px 8px);box-shadow:inset 0 0 0 1px ${esc(color)}"></div>` : '';
+    const due = w === dueW ? `<div class="due" style="left:${((x.dueMs - mon(w)) / DAY + 1) / 7 * 100}%" title="Due ${dlong(x.dueMs)}"></div>` : '';
+    return `<div class="c${late ? ' late' : ''}${cls(w)}" title="${esc(tip)}">${dv}${ts}${due}</div>`;
+  }).join('');
+}
+
+function workLabel({ open, caretKey, title, tags, x, bac, extra, color }) {
+  const names = `Dev: ${[...x.devP].join(', ') || '—'} · Test: ${[...x.testP].join(', ') || '—'}`;
+  const bacTxt = bac ? `<span class="bac ${x.bacState}">${Math.round(x.total)} / ${bac} h</span>` : '<span>no BAC</span>';
+  const caret = caretKey ? `<button class="caret${isOpen(caretKey) ? ' open' : ''}" data-caret="${caretKey}" title="Show or hide what’s inside (Ctrl + scroll zooms everything)">▶</button>` : '<span class="caret none"></span>';
+  return `<div class="lab click" data-open="${open}" title="${esc(names)}">${caret}
+    <span class="sw" style="background:${esc(color)}"></span>
+    <div class="lt"><div class="l1">${title} ${tags.map(t => `<span class="tag">${esc(t)}</span>`).join(' ')}
+      ${x.late ? '<span class="bad">late</span>' : ''}</div>
+      <div class="l2">${esc(names)}</div>
+      <div class="l3">${extra}Dev ${x.devW.size} wks · Test ${x.testW.size} wks · ${bacTxt}</div></div></div>`;
+}
+
+function peopleOnMvp(m, cls) {
+  const x = M.mv[m.id], color = mvpColor(m.id);
+  const ids = Object.keys(x.who).sort((a, b) => {
+    const pa = person(a), pb = person(b);
+    return (pa.role === pb.role ? 0 : pa.role === 'dev' ? -1 : 1) || pa.name.localeCompare(pb.name);
+  });
+  if (!ids.length) return `<div class="row arow"><div class="lab hint">No one on ${esc(mvpKey(m))} yet</div><div class="fill" style="width:${M.weeks.length * CW}px"></div></div>`;
+  return ids.map(pid => {
+    const p = person(pid), who = x.who[pid], test = p.role === 'test';
+    const bg = test ? `repeating-linear-gradient(135deg,${color} 0 5px,${shade(color, .45)} 5px 8px)` : color;
+    return `<div class="row arow"><div class="lab click" data-open="person:${pid}">
+      <span class="nm">${esc(p.name)}</span><span class="role">${test ? 'Test' : 'Dev'}</span></div>
+      ${M.weeks.map(w => `<div class="c${cls(w)}" data-cell="${pid}:${w}" title="${esc(`${p.name} on ${mvpKey(m)} · ${wlabel(w)}${who[w] ? `\n${who[w]}%` : ''}`)}">` +
+        (who[w] ? `<div class="ac" style="background:${bg}">${who[w]}</div>` : '') + '</div>').join('')}</div>`;
+  }).join('');
+}
+
+const kids = (key, html) => `<div class="kids${isOpen(key) ? ' open' : ''}" data-kids="${key}"><div class="in">${html}</div></div>`;
+
+function packageRows(cls) {
+  const relOrder = p => Math.min(...mvpsOf(p.id).map(m => plan.releases.findIndex(r => r.id === m.releaseId)), 99);
+  const pkgs = [...plan.packages].sort((a, b) => relOrder(a) - relOrder(b));
+  return pkgs.map(p => {
+    const ms = mvpsOf(p.id);
+    if (ms.length === 1) {
+      const m = ms[0], x = M.mv[m.id], key = 'mv:' + m.id;
+      const head = `<div class="row mrow">${workLabel({ open: 'pkg:' + p.id, caretKey: key, color: p.color, x, bac: m.bac,
+        title: `<b>${esc(p.key)}</b> ${esc(p.name)}`, tags: [release(m.releaseId)?.name ?? '?'], extra: '' })}${barCells(x, p.color, cls)}</div>`;
+      return `<div class="blk">${head}${kids(key, peopleOnMvp(m, cls))}</div>`;
+    }
+    const y = M.pk[p.id], key = 'pk:' + p.id;
+    const head = `<div class="row mrow">${workLabel({ open: 'pkg:' + p.id, caretKey: key, color: p.color, x: y, bac: y.bac,
+      title: `<b>${esc(p.key)}</b> ${esc(p.name)}`, tags: [...y.releases], extra: `${ms.length} MVPs · ` })}${barCells(y, p.color, cls)}</div>`;
+    const inner = ms.map(m => {
+      const x = M.mv[m.id], mk = 'mv:' + m.id, color = mvpColor(m.id);
+      const row = `<div class="row mrow sub">${workLabel({ open: 'mvp:' + m.id, caretKey: mk, color, x, bac: m.bac,
+        title: `<b>${esc(mvpKey(m))}</b> ${esc(mvpTitle(m))}`, tags: [release(m.releaseId)?.name ?? '?'],
+        extra: m.due ? `due ${dshort(parse(m.due))} · ` : '' })}${barCells(x, color, cls)}</div>`;
+      return `<div class="blk">${row}${kids(mk, peopleOnMvp(m, cls))}</div>`;
+    }).join('');
+    return `<div class="blk">${head}${kids(key, inner)}</div>`;
+  }).join('');
+}
+
+/* ---------- Zoom ---------- */
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// Keep `row` (or the nearest row still showing once `change` has run) at the same place on screen
+// while the rows around it open or close.
+function anchored(row, change) {
+  const wrap = $('#wrap');
+  if (!row) {
+    const r = wrap.getBoundingClientRect(), head = $('#grid .head');
+    const el = document.elementFromPoint(r.left + 20, r.top + (head ? head.offsetHeight : 0) + 8);
+    row = el && el.closest('#grid .row');
+  }
+  // The row and the header rows of everything it sits inside, with where they are now
+  const chain = [];
+  for (let r = row; r; ) {
+    chain.push([r, r.getBoundingClientRect().top]);
+    const k = r.closest('.kids');
+    r = k && k.previousElementSibling;
+  }
+  change();
+  const pick = chain.find(([r]) => !r.closest('.kids:not(.open)'));
+  if (!pick) return;
+  [row] = pick;
+  const top0 = pick[1], until = performance.now() + (reduceMotion() ? 0 : 320);
+  const step = () => {
+    wrap.scrollTop += row.getBoundingClientRect().top - top0;
+    if (performance.now() < until) requestAnimationFrame(step);
+  };
+  step();
+}
+
+function applyOpenState() {
+  document.querySelectorAll('#grid [data-kids]').forEach(el => el.classList.toggle('open', isOpen(el.dataset.kids)));
+  document.querySelectorAll('#grid [data-caret]').forEach(el => el.classList.toggle('open', isOpen(el.dataset.caret)));
+}
+
+function renderZoomCtl() {
+  document.body.classList.toggle('z0', zoom === 0);
+  $('#zoomCtl').innerHTML = ZOOM_NAMES.map((n, i) => `<button data-zoom="${i}" class="${i === zoom ? 'on' : ''}">${n}</button>`).join('');
+}
+
+function setZoom(z, row) {
+  z = Math.max(0, Math.min(2, z));
+  if (z === zoom && !Object.keys(openOverride).length) return;
+  anchored(row, () => {
+    zoom = z;
+    for (const k in openOverride) delete openOverride[k];
+    try { localStorage.setItem(STORE + '.zoom', String(z)); } catch (e) {}
+    renderZoomCtl();
+    applyOpenState();
+  });
+}
+
+function toggleOpen(key, row) {
+  anchored(row, () => { openOverride[key] = !isOpen(key); applyOpenState(); });
+}
+
 function personCell(p, w, c, flag, extra) {
   const st = c.status;
   let k = 'c pc' + extra;
@@ -705,9 +947,11 @@ function personCell(p, w, c, flag, extra) {
   else if (st === 'out') k += ' out';
   else if (showSpare && c.cap > 0 && c.load < 100) k += ' spare';
   const segs = c.items.map(a => {
-    const lbl = c.items.length === 1 ? (a.mvpId === DEF ? 'DEF' : mvpLabel(a.mvpId)) + (a.pct !== 100 ? ' ' + a.pct : '') : '';
-    return a.mvpId === DEF ? `<div class="seg def" style="flex:${a.pct}">${esc(lbl)}</div>`
-      : `<div class="seg" style="flex:${a.pct};background:${esc(mvpColor(a.mvpId))}">${esc(lbl)}</div>`;
+    const pct = a.pct !== 100 ? ' ' + a.pct : '';
+    const lbl = c.items.length !== 1 ? '' : a.mvpId === DEF ? 'DEF' + pct
+      : `<span class="kp">${esc(pkgLabel(a.mvpId) + pct)}</span><span class="km">${esc(mvpLabel(a.mvpId) + pct)}</span>`;
+    return a.mvpId === DEF ? `<div class="seg def" style="flex:${a.pct}">${lbl}</div>`
+      : `<div class="seg" style="flex:${a.pct};background:${esc(mvpColor(a.mvpId))}">${lbl}</div>`;
   }).join('');
   const lv = c.leave ? `<div class="lv${c.leave >= 3 ? ' long' : ''}" style="width:${c.leave / 5 * 100}%"><span>${c.leave}d</span></div>` : '';
   const spareDays = c.cap * (100 - c.load) / 100;
@@ -800,11 +1044,38 @@ function setLeaveRaw(pid, w, days) {
 function setLeave(pid, w, days) { setLeaveRaw(pid, w, Math.round(+days || 0)); commit(); }
 
 const COLORS = ['#3d6be0', '#1f9461', '#c98a00', '#c4466f', '#7d5bc9', '#0a8fa0', '#b4521c', '#56636f', '#2e8b57', '#a0398f'];
-function addMvp() {
-  const rel = plan.releases.find(r => !bcsOf(r) || parse(bcsOf(r)) >= todayMs()) || plan.releases[0];
-  const m = { id: uid(), key: 'NEW', name: 'New MVP', color: COLORS[plan.mvps.length % COLORS.length],
-              releaseId: rel ? rel.id : '', bac: 0, due: '' };
-  plan.mvps.push(m); save(); openPanel('mvp', m.id);
+function defaultRelease() {
+  return plan.releases.find(r => !bcsOf(r) || parse(bcsOf(r)) >= todayMs()) || plan.releases[0];
+}
+function addPackage() {
+  const p = { id: uid(), key: 'NEW', name: 'New package', color: COLORS[plan.packages.length % COLORS.length] };
+  plan.packages.push(p);
+  plan.mvps.push({ id: uid(), packageId: p.id, desc: '', releaseId: defaultRelease()?.id ?? '', bac: 0, due: '' });
+  save(); openPanel('pkg', p.id);
+}
+function addMvp(pid) {
+  const ms = mvpsOf(pid), last = ms[ms.length - 1];
+  const m = { id: uid(), packageId: pid, desc: '', releaseId: last ? last.releaseId : defaultRelease()?.id ?? '', bac: 0, due: '' };
+  // Keep a package's MVPs together in the list, since their order is their number
+  const at = last ? plan.mvps.indexOf(last) + 1 : plan.mvps.length;
+  plan.mvps.splice(at, 0, m);
+  commit();
+}
+function moveMvp(id, dir) {
+  const m = mvp(id), ms = mvpsOf(m.packageId), i = ms.indexOf(m), other = ms[i + dir];
+  if (!other) return;
+  const a = plan.mvps.indexOf(m), b = plan.mvps.indexOf(other);
+  [plan.mvps[a], plan.mvps[b]] = [plan.mvps[b], plan.mvps[a]];
+  commit();
+}
+function moveMvpTo(id, pid) {
+  const m = mvp(id);
+  if (mvpsOf(m.packageId).length === 1) { alert('This is the package’s only MVP. Delete the package instead, or add another MVP first.'); render(); return; }
+  plan.mvps.splice(plan.mvps.indexOf(m), 1);
+  const ms = mvpsOf(pid), last = ms[ms.length - 1];
+  m.packageId = pid;
+  plan.mvps.splice(last ? plan.mvps.indexOf(last) + 1 : plan.mvps.length, 0, m);
+  commit();
 }
 function addPerson(role) {
   const p = { id: uid(), name: role === 'dev' ? 'New developer' : 'New tester', role };
@@ -830,10 +1101,18 @@ function upd(coll, id, field, v) {
   x[field] = v; commit();
 }
 function del(coll, id) {
-  const label = { people: 'this team member and their assignments', mvps: 'this MVP and its assignments' }[coll];
+  if (coll === 'mvps' && mvpsOf(mvp(id).packageId).length === 1) { alert('A package needs at least one MVP. Delete the package instead.'); return; }
+  const label = { people: 'this team member and their assignments', mvps: 'this MVP and its assignments',
+                  packages: 'this package, its MVPs and their assignments' }[coll];
   if (!confirm(`Delete ${label}?`)) return;
   plan[coll] = plan[coll].filter(o => o.id !== id);
   if (coll === 'people') { plan.assignments = plan.assignments.filter(a => a.personId !== id); delete plan.leave[id]; }
+  if (coll === 'packages') {
+    const gone = new Set(plan.mvps.filter(m => m.packageId === id).map(m => m.id));
+    plan.mvps = plan.mvps.filter(m => !gone.has(m.id));
+    plan.assignments = plan.assignments.filter(a => !gone.has(a.mvpId));
+    if (gone.has(tool)) tool = 'select';
+  }
   if (coll === 'mvps') plan.assignments = plan.assignments.filter(a => a.mvpId !== id);
   if (tool === id) tool = 'select';
   closePanel(); commit();
@@ -868,7 +1147,7 @@ const weekOptions = sel => {
   if (!ws_.includes(s)) ws_.push(s), ws_.sort((a, b) => a - b);
   return ws_.map(w => `<option value="${ws(w)}"${w === s ? ' selected' : ''}>${wlabel(w)}</option>`).join('');
 };
-const mvpOptions = sel => [...plan.mvps.map(m => [m.id, `${m.key} ${m.name}`]), [DEF, 'Defect duty']]
+const mvpOptions = sel => [...plan.mvps.map(m => [m.id, `${mvpKey(m)} ${pkg(m.packageId)?.name ?? ''} ${mvpTitle(m)}`]), [DEF, 'Defect duty']]
   .map(([v, l]) => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(l)}</option>`).join('');
 const personOptions = sel => plan.people
   .map(p => `<option value="${p.id}"${p.id === sel ? ' selected' : ''}>${esc(p.name)} (${p.role === 'dev' ? 'Dev' : 'Test'})</option>`).join('');
@@ -881,6 +1160,35 @@ function assignmentRow(a, showPerson) {
     <select onchange="updA('${a.id}','start',this.value)">${weekOptions(a.start)}</select> →
     <select onchange="updA('${a.id}','end',this.value)">${weekOptions(a.end)}</select>
     <button class="x" title="Remove" onclick="delA('${a.id}')">✕</button></div>`;
+}
+
+function mvpFields(m) {
+  return `<label>Description</label><input value="${esc(m.desc)}" placeholder="e.g. Backend" onchange="upd('mvps','${m.id}','desc',this.value)">
+    <label>Target release</label><select onchange="upd('mvps','${m.id}','releaseId',this.value)">
+      ${plan.releases.map(r => `<option value="${r.id}"${r.id === m.releaseId ? ' selected' : ''}>${esc(r.name)}</option>`).join('')}</select>
+    <label>BAC (hours)</label><input type="number" min="0" step="10" value="${m.bac || 0}" onchange="upd('mvps','${m.id}','bac',this.value)">
+    <label>Due date</label><span><input type="date" value="${esc(m.due)}" onchange="upd('mvps','${m.id}','due',this.value)">
+      ${m.due ? `<button class="x" onclick="upd('mvps','${m.id}','due','')" title="Use release default">↺</button>` : ''}</span>`;
+}
+function dueNote(m) {
+  const rel = release(m.releaseId), def = bcsOf(rel);
+  return `<div class="note">${m.due ? 'Own due date, for example because another team depends on this MVP.'
+    : def ? `Due at ${esc(rel.name)} beta code stop (${dlong(parse(def))}).` : 'The target release has no beta code stop.'}</div>`;
+}
+function mvpDetail(m) {
+  const x = M.mv[m.id], s = plan.settings;
+  const items = plan.assignments.filter(a => a.mvpId === m.id).sort((a, b) => a.start.localeCompare(b.start));
+  return `<h3>Plan vs BAC</h3>
+    <div class="stats">
+      <span>Dev</span><b>${x.devW.size} weeks · ${Math.round(x.devH)} h</b>
+      <span>Test</span><b>${x.testW.size} weeks · ${Math.round(x.testH)} h</b>
+      <span>Total planned</span><b class="bac ${x.bacState}">${Math.round(x.total)} h${m.bac ? ` of ${m.bac} h BAC` : ''}</b>
+      ${x.late ? `<span>Status</span><b class="bac over">Late: work planned after ${dlong(x.dueMs)}</b>` : ''}
+    </div>
+    <div class="note">Planned hours = assigned % × available days × ${s.hoursPerDay} h. Flagged when under the BAC or more than ${s.bacTolerance}% over.</div>
+    <h3>Who works on it</h3>
+    <div class="list">${items.map(a => assignmentRow(a, true)).join('') || '<div class="note">No one yet. Pick this MVP’s brush and paint on people’s rows.</div>'}</div>
+    <p><button onclick="tool='${m.id}';closePanel();render()">Paint with ${esc(mvpKey(m))}</button></p>`;
 }
 
 function renderPanel() {
@@ -928,33 +1236,47 @@ function renderPanel() {
 
   if (kind === 'mvp') {
     const m = mvp(id); if (!m) return closePanel();
-    const x = M.mv[m.id], rel = release(m.releaseId);
-    const items = plan.assignments.filter(a => a.mvpId === m.id).sort((a, b) => a.start.localeCompare(b.start));
-    const def = bcsOf(rel);
-    h = `<h2><span>${esc(m.key)} ${esc(m.name)}</span>${close}</h2>
+    const p = pkg(m.packageId);
+    h = `<h2><span>${esc(mvpKey(m))} ${esc(mvpTitle(m))}</span>${close}</h2>
+      <div class="note">Part of <a href="#" onclick="openPanel('pkg','${p.id}');return false">${esc(p.key)} ${esc(p.name)}</a>.</div>
       <div class="f">
-        <label>Name</label><input value="${esc(m.name)}" onchange="upd('mvps','${m.id}','name',this.value)">
-        <label>Key</label><input value="${esc(m.key)}" onchange="upd('mvps','${m.id}','key',this.value)">
-        <label>Colour</label><input type="color" value="${esc(m.color)}" onchange="upd('mvps','${m.id}','color',this.value)">
-        <label>Target release</label><select onchange="upd('mvps','${m.id}','releaseId',this.value)">
-          ${plan.releases.map(r => `<option value="${r.id}"${r.id === m.releaseId ? ' selected' : ''}>${esc(r.name)}</option>`).join('')}</select>
-        <label>BAC (hours)</label><input type="number" min="0" step="10" value="${m.bac || 0}" onchange="upd('mvps','${m.id}','bac',this.value)">
-        <label>Due date</label><span><input type="date" value="${esc(m.due)}" onchange="upd('mvps','${m.id}','due',this.value)">
-          ${m.due ? `<button class="x" onclick="upd('mvps','${m.id}','due','')" title="Use release default">↺</button>` : ''}</span>
+        <label>Package</label><select onchange="moveMvpTo('${m.id}',this.value)">
+          ${plan.packages.map(q => `<option value="${q.id}"${q.id === p.id ? ' selected' : ''}>${esc(q.key)} ${esc(q.name)}</option>`).join('')}</select>
+        ${mvpFields(m)}
       </div>
-      <div class="note">${m.due ? 'Custom due date.' : def ? `Using ${esc(rel.name)} beta code stop (${dlong(parse(def))}).` : 'The target release has no beta code stop.'}</div>
-      <h3>Plan vs BAC</h3>
-      <div class="stats">
-        <span>Dev</span><b>${x.devW.size} weeks · ${Math.round(x.devH)} h</b>
-        <span>Test</span><b>${x.testW.size} weeks · ${Math.round(x.testH)} h</b>
-        <span>Total planned</span><b class="bac ${x.bacState}">${Math.round(x.total)} h${m.bac ? ` of ${m.bac} h BAC` : ''}</b>
-        ${x.late ? `<span>Status</span><b class="bac over">Late: work planned after ${dlong(x.dueMs)}</b>` : ''}
+      ${dueNote(m)}
+      ${mvpDetail(m)}
+      <p><button class="danger" onclick="del('mvps','${m.id}')">Delete MVP</button></p>`;
+  }
+
+  if (kind === 'pkg') {
+    const p = pkg(id); if (!p) return closePanel();
+    const ms = mvpsOf(p.id), y = M.pk[p.id];
+    h = `<h2><span>${esc(p.key)} ${esc(p.name)}</span>${close}</h2>
+      <div class="f">
+        <label>Name</label><input value="${esc(p.name)}" onchange="upd('packages','${p.id}','name',this.value)">
+        <label>Key</label><input value="${esc(p.key)}" onchange="upd('packages','${p.id}','key',this.value)">
+        <label>Colour</label><input type="color" value="${esc(p.color)}" onchange="upd('packages','${p.id}','color',this.value)">
       </div>
-      <div class="note">Planned hours = assigned % × available days × ${s.hoursPerDay} h. Flagged when under the BAC or more than ${s.bacTolerance}% over.</div>
-      <h3>Who works on it</h3>
-      <div class="list">${items.map(a => assignmentRow(a, true)).join('') || '<div class="note">No one yet. Pick this MVP’s brush and paint on people’s rows.</div>'}</div>
-      <p><button onclick="tool='${m.id}';closePanel();render()">Paint with this MVP</button>
-        <button class="danger" onclick="del('mvps','${m.id}')">Delete MVP</button></p>`;
+      <div class="note">MVPs are numbered by their order here and take shades of the package colour.</div>
+      ${ms.length === 1 ? `<h3>${esc(mvpKey(ms[0]))}</h3><div class="f">${mvpFields(ms[0])}</div>${dueNote(ms[0])}${mvpDetail(ms[0])}`
+        : `<h3>Plan vs BAC (all MVPs)</h3>
+        <div class="stats"><span>Dev</span><b>${y.devW.size} weeks · ${Math.round(y.devH)} h</b>
+          <span>Test</span><b>${y.testW.size} weeks · ${Math.round(y.testH)} h</b>
+          <span>Total planned</span><b class="bac ${y.bacState}">${Math.round(y.total)} h${y.bac ? ` of ${y.bac} h BAC` : ''}</b></div>
+        <h3>MVPs</h3><div class="list">${ms.map((m, i) => {
+          const x = M.mv[m.id];
+          return `<div class="it"><span class="sw" style="background:${mvpColor(m.id)}"></span>
+            <b>${esc(mvpKey(m))}</b>
+            <input value="${esc(m.desc)}" placeholder="Description" style="width:120px" onchange="upd('mvps','${m.id}','desc',this.value)">
+            <span class="tag">${esc(release(m.releaseId)?.name ?? '?')}</span>
+            <span class="bac ${x.bacState}">${Math.round(x.total)} / ${m.bac || 0} h</span>${x.late ? ' <span class="bad">late</span>' : ''}
+            <button class="x" title="Move up" onclick="moveMvp('${m.id}',-1)"${i ? '' : ' disabled'}>↑</button>
+            <button class="x" title="Move down" onclick="moveMvp('${m.id}',1)"${i < ms.length - 1 ? '' : ' disabled'}>↓</button>
+            <button onclick="openPanel('mvp','${m.id}')">Open</button></div>`;
+        }).join('')}</div>`}
+      <p><button onclick="addMvp('${p.id}')">+ Add MVP</button>
+        <button class="danger" onclick="del('packages','${p.id}')">Delete package</button></p>`;
   }
 
   if (kind === 'releases') {
@@ -1006,15 +1328,14 @@ $('#importFile').addEventListener('change', async e => {
   if (!f) return;
   try {
     const p = JSON.parse(await f.text());
-    if (!Array.isArray(p.people) || !Array.isArray(p.mvps) || !Array.isArray(p.assignments) || !Array.isArray(p.releases))
+    if (!Array.isArray(p.people) || !Array.isArray(p.mvps) || !Array.isArray(p.assignments) || !Array.isArray(p.releases) || (p.packages && !Array.isArray(p.packages)))
       throw new Error('This file is not a team plan.');
-    p.leave ||= {}; p.settings = { ...DEFAULT_SETTINGS, ...p.settings };
     if (!confirm('Replace the current plan with the imported one?')) return;
-    plan = p; tool = 'select'; commit();
+    plan = upgrade(p); tool = 'select'; commit();
   } catch (err) { alert('Import failed: ' + err.message); }
 });
 function resetPlan(kind) {
-  if (!confirm(kind === 'empty' ? 'Clear all people, MVPs, assignments and leave? Releases are kept.' : 'Replace the current plan with the sample plan?')) return;
+  if (!confirm(kind === 'empty' ? 'Clear all people, packages, MVPs, assignments and leave? Releases are kept.' : 'Replace the current plan with the sample plan?')) return;
   plan = kind === 'empty' ? { ...emptyPlan(), releases: plan.releases } : samplePlan();
   tool = 'select'; closePanel(); commit();
 }
@@ -1023,14 +1344,37 @@ function resetPlan(kind) {
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-tool]');
   if (t) { tool = t.dataset.tool; renderPalette(); return; }
+  const pp = e.target.closest('[data-palpkg]');
+  if (pp) { palPkg = palPkg === pp.dataset.palpkg ? null : pp.dataset.palpkg; renderPalette(); return; }
+  const z = e.target.closest('[data-zoom]');
+  if (z) { setZoom(+z.dataset.zoom); return; }
+  const cr = e.target.closest('[data-caret]');
+  if (cr) { toggleOpen(cr.dataset.caret, cr.closest('.row')); return; }
+  const cell = e.target.closest('[data-cell]');
+  if (cell) { const [pid, w] = cell.dataset.cell.split(':'); openPanel('cell', pid, +w); return; }
   const o = e.target.closest('[data-open]');
   if (o) { const [k, id] = o.dataset.open.split(':'); openPanel(k, id); return; }
   const act = e.target.closest('[data-act]');
   if (act) {
-    if (act.dataset.act === 'addMvp') addMvp();
+    if (act.dataset.act === 'addPackage') addPackage();
     if (act.dataset.act === 'addPerson') addPerson(act.dataset.role);
   }
 });
+
+// Zoom with Ctrl + scroll (also a trackpad pinch) and Ctrl + / Ctrl − / Ctrl 0, instead of the browser's page zoom
+let wheelSum = 0, wheelQuietUntil = 0;
+window.addEventListener('wheel', e => {
+  if (!e.ctrlKey || $('#help').open) return;
+  e.preventDefault();
+  const now = performance.now();
+  if (now < wheelQuietUntil) return;
+  wheelSum += e.deltaY;
+  if (Math.abs(wheelSum) < 40) return;
+  const dir = wheelSum < 0 ? 1 : -1;
+  wheelSum = 0; wheelQuietUntil = now + 300;
+  const el = document.elementFromPoint(e.clientX, e.clientY);
+  setZoom(zoom + dir, el && el.closest('#grid .row'));
+}, { passive: false });
 function openHelp() {
   $('#help').showModal();
   try { localStorage.setItem(STORE + '.helpSeen', '1'); } catch (e) {}
@@ -1039,6 +1383,11 @@ $('#help').addEventListener('click', e => { if (e.target === e.currentTarget) e.
 document.addEventListener('keydown', e => {
   if ($('#help').open) return;
   if (e.key === '?' && !e.target.closest('input, select, textarea')) { e.preventDefault(); openHelp(); return; }
+  if ((e.ctrlKey || e.metaKey) && ['+', '=', '-', '_', '0'].includes(e.key)) {
+    e.preventDefault();
+    setZoom(e.key === '0' ? 0 : zoom + (e.key === '-' || e.key === '_' ? -1 : 1));
+    return;
+  }
   if (e.key !== 'Escape') return;
   if (tool !== 'select') { tool = 'select'; renderPalette(); } else closePanel();
 });

@@ -10,9 +10,13 @@ The whole picture for the team: its people, releases, MVPs, assignments and leav
 **Week**:
 A Monday-to-Friday column of the plan. This is the unit in which work is shown.
 
-**MVP**:
-A unit of deliverable work with a dev phase, a test phase and a due date. It is not a whole product.
+**Package**:
+A group of one to five MVPs that together deliver one piece of functionality. It is identified by a key such as SRCH.
 _Avoid_: Feature, epic, project
+
+**MVP**:
+A unit of deliverable work within a package, with its own dev phase, test phase, BAC, target release and due date. It is numbered within its package, as in SRCH-1, and it is not a whole product.
+_Avoid_: Story, milestone
 
 **BAC**:
 An MVP's feature estimate in hours: one total covering both dev and test work.
@@ -28,7 +32,7 @@ The weeks in which testers work on an MVP. It may overlap the dev phase freely, 
 A team member working on an MVP for a range of weeks at a percentage of their capacity.
 
 **Due date**:
-The date by which an MVP must be done. By default it is the beta code stop of its target release.
+The date by which an MVP must be done. By default it is the beta code stop of its target release. It can be set earlier, for example when another team depends on that MVP.
 _Avoid_: Deadline
 
 **Target release**:
