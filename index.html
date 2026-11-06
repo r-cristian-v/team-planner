@@ -209,6 +209,29 @@ body.painting { user-select: none; }
 .legend { display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--muted); align-items: center; }
 .legend i { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: -1px; margin-right: 3px; }
 
+/* Help modal */
+#help {
+  width: min(720px, calc(100vw - 32px)); max-height: calc(100vh - 48px); padding: 0;
+  border: 1px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, .3);
+}
+#help::backdrop { background: rgba(10, 14, 20, .45); }
+#help .hd {
+  position: sticky; top: 0; background: var(--panel); border-bottom: 1px solid var(--line);
+  padding: 14px 20px; display: flex; justify-content: space-between; align-items: center;
+}
+#help .hd h2 { margin: 0; font-size: 16px; }
+#help .bd { padding: 4px 20px 20px; }
+#help h3 { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin: 18px 0 6px; }
+#help p, #help li { margin: 4px 0; }
+#help ul { padding-left: 18px; margin: 4px 0; }
+#help kbd {
+  font: 11px ui-monospace, monospace; border: 1px solid var(--line); border-bottom-width: 2px;
+  border-radius: 4px; padding: 0 4px; background: var(--bg);
+}
+#help .keys { display: grid; grid-template-columns: auto 1fr; gap: 4px 12px; align-items: baseline; }
+#help .sw2 { display: inline-block; width: 22px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 4px; }
+
 @media (max-width: 700px) {
   :root { --labw: 170px; --cw: 40px; }
   .mrow .l2 { display: none; }
@@ -224,11 +247,85 @@ body.painting { user-select: none; }
     <button id="todayBtn">Today</button>
     <button id="relBtn">Releases</button>
     <button id="setBtn">Settings</button>
+    <button id="helpBtn" title="Help (?)">? Help</button>
   </div>
 </header>
 <section id="alerts"></section>
 <main id="wrap"><div id="grid"></div></main>
 <aside id="panel" hidden></aside>
+<dialog id="help" aria-labelledby="helpTitle">
+  <div class="hd"><h2 id="helpTitle">How to use Team Planner</h2>
+    <button class="x" onclick="$('#help').close()" title="Close (Esc)">✕</button></div>
+  <div class="bd">
+    <p>Plan who works on which MVP, week by week, and spot early when someone is about to run out of work
+      or is overbooked.</p>
+
+    <h3>What’s on the page</h3>
+    <ul>
+      <li><b>Alerts</b>: <i>Act now</i> lists who runs out of work next week, who is short of work this week
+        and who is overbooked. <i>Next 12 weeks</i> shows what’s coming. <i>MVPs</i> lists late MVPs and BAC
+        mismatches. Click an alert to open the person or MVP.</li>
+      <li><b>Releases &amp; milestones</b>: when each release starts, its code stops, and its system test periods.
+        Purple lines mark code stops, and the shaded area between beta and final code stop is the bug-fix window.
+        The blue line is today.</li>
+      <li><b>Load strips</b>: booked days against available days for all testers, then all developers.</li>
+      <li><b>MVPs</b>: the solid bar is dev weeks and the striped bar is test weeks, both taken from who is
+        assigned. The dashed red line is the due date.</li>
+      <li><b>Developers and Testers</b>: one row per team member, showing what they work on each week, their leave,
+        and their flags.</li>
+    </ul>
+
+    <h3>Planning work</h3>
+    <ul>
+      <li>Pick a brush in the top bar (an MVP, <b>Defects</b> or <b>Leave</b>), then <b>drag across a person’s
+        weeks</b>. Painting replaces what was there.</li>
+      <li>Hold <kbd>Shift</kbd> while dragging to add work alongside what’s already there, for example half on two MVPs.</li>
+      <li><b>Erase</b> removes work and leave from the weeks you drag over.</li>
+      <li>With <b>Select</b>, click a week on a person’s row to set leave days (1–5) or change the % and week
+        range of an assignment. Click a name or an MVP to edit it.</li>
+      <li>Leave painted with the brush counts as 5 days. Click the week to change it to fewer days.</li>
+      <li><b>Releases</b> edits release dates and milestones. <b>Settings</b> holds the thresholds and
+        import/export.</li>
+    </ul>
+
+    <h3>What the colours mean</h3>
+    <ul>
+      <li><span class="sw2" style="background:var(--overbg);box-shadow:inset 0 0 0 2px var(--over)"></span>
+        <b>Overbooked</b>: more than 100% of the person’s capacity is booked that week.</li>
+      <li><span class="sw2" style="background:var(--outbg)"></span>
+        <b>Short of work</b>: less than 50% booked (the threshold is set in Settings). Weeks fully on leave don’t count.</li>
+      <li><b style="color:var(--out)">⚑</b> The week <i>before</i> someone runs short of work, so you have a
+        week to find them something.</li>
+      <li><span class="sw2" style="background:repeating-linear-gradient(45deg,var(--leave) 0 3px,transparent 3px 6px)"></span>
+        <b>Leave</b>: the number shows the days off. Leave of 3 days or more is outlined.</li>
+      <li><span class="sw2" style="background:var(--sparebg)"></span>
+        <b>Spare capacity</b>: with “Show spare capacity” on, the free days (+Xd) show who could pick up defects.</li>
+      <li><span class="sw2" style="background:repeating-linear-gradient(135deg,var(--overbg) 0 4px,transparent 4px 8px)"></span>
+        <b>Late</b>: weeks of MVP work planned after its due date.</li>
+    </ul>
+
+    <h3>How things are worked out</h3>
+    <ul>
+      <li><b>Capacity</b> is 5 days a week minus leave. <b>Load</b> adds up the % of every assignment and defect duty in the week.</li>
+      <li><b>Planned hours</b> for an MVP are assigned % × available days × hours per day (8 by default).
+        They’re compared with the <b>BAC</b>: amber if under it, red if more than 20% over.</li>
+      <li>An MVP’s <b>due date</b> is its target release’s beta code stop unless you set its own date. Any dev
+        or test work after it makes the MVP late.</li>
+    </ul>
+
+    <h3>Your data</h3>
+    <p>The plan is saved <b>in this browser only</b>. Nobody else sees your changes, and clearing site data
+      deletes them. Use <b>Settings → Export JSON</b> to keep a copy or share it, and <b>Import JSON</b> to load one.
+      <b>Reset to sample plan</b> brings back the example data, and <b>Reset to empty</b> starts over but keeps the releases.</p>
+
+    <h3>Keyboard</h3>
+    <div class="keys">
+      <kbd>?</kbd><span>Open this help</span>
+      <kbd>Esc</kbd><span>Close this help, go back to Select, or close the side panel</span>
+      <kbd>Shift</kbd><span>While painting, add instead of replace</span>
+    </div>
+  </div>
+</dialog>
 <input type="file" id="importFile" accept="application/json,.json" hidden>
 
 <script>
@@ -934,18 +1031,28 @@ document.addEventListener('click', e => {
     if (act.dataset.act === 'addPerson') addPerson(act.dataset.role);
   }
 });
+function openHelp() {
+  $('#help').showModal();
+  try { localStorage.setItem(STORE + '.helpSeen', '1'); } catch (e) {}
+}
+$('#help').addEventListener('click', e => { if (e.target === e.currentTarget) e.currentTarget.close(); });
 document.addEventListener('keydown', e => {
+  if ($('#help').open) return;
+  if (e.key === '?' && !e.target.closest('input, select, textarea')) { e.preventDefault(); openHelp(); return; }
   if (e.key !== 'Escape') return;
   if (tool !== 'select') { tool = 'select'; renderPalette(); } else closePanel();
 });
 $('#todayBtn').onclick = scrollToToday;
 $('#relBtn').onclick = () => openPanel('releases');
 $('#setBtn').onclick = () => openPanel('settings');
+$('#helpBtn').onclick = openHelp;
 $('#spareToggle').onchange = e => { showSpare = e.target.checked; render(); };
 window.addEventListener('resize', () => render());
 
 load();
 render();
+// Show help on a first visit
+try { if (!localStorage.getItem(STORE + '.helpSeen')) openHelp(); } catch (e) {}
 </script>
 </body>
 </html>
